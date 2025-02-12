@@ -9,9 +9,8 @@ IndentCaseLabels: false
 DerivePointerAlignment: false
 PointerAlignment: Right
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
 AlignTrailingComments: true
 SpacesBeforeTrailingComments: 2
 SortIncludes: true
 IncludeBlocks: Preserve
+InsertNewlineAtEOF: true

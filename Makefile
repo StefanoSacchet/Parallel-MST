@@ -33,7 +33,7 @@ clean:
 	fi
 
 format:
-	find ./src/ -name "*.c" -o -name "*.h" | xargs clang-format -style=file:.clang-format -i
+	@find ./src/ -name "*.c" -o -name "*.h" | xargs clang-format -style=file:.clang-format -i
 
 check-formatting-deps:
 	@which clang-format >/dev/null 2>&1 || { \

@@ -22,6 +22,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # Add sources
 set(SOURCES
     src/main.c
+    src/serial_mst.c
 )
 
 # Define the executable

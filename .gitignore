@@ -54,3 +54,5 @@ dkms.conf
 .DS_Store
 /build
 .last_compilation_mode
+.vscode
+.cache/

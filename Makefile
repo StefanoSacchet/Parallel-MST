@@ -42,3 +42,11 @@ check-formatting-deps:
 		echo "  - On macOS: brew install clang-format"; \
 		exit 1; \
 	}
+
+test: debug
+	@set -e; \
+	$(call setup_folder, build/debug) \
+ 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
+	make -j$(CORES) test_all; \
+	ctest --output-on-failure; \
+	cd -;

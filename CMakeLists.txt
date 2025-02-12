@@ -27,3 +27,8 @@ set(SOURCES
 
 # Define the executable
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# Enable Testing
+enable_testing()
+add_executable(test_all tests/test_mst.c src/serial_mst.c)
+add_test(NAME MST_Test COMMAND test_all)

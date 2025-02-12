@@ -4,7 +4,7 @@
 #include "serial_mst.h"
 
 // Create a graph with V vertices and E edges
-struct Graph *createGraph(int V, int E) {
+struct Graph *create_graph(int V, int E) {
     struct Graph *graph = (struct Graph *)malloc(sizeof(struct Graph));
     graph->V = V;
     graph->E = E;
@@ -37,7 +37,7 @@ void unionSets(struct Subset subsets[], int x, int y) {
 }
 
 // Boruvka's algorithm to find MST
-void boruvkaMST(struct Graph *graph) {
+int boruvkaMST(struct Graph *graph) {
     int V = graph->V, E = graph->E;
     struct Edge *edge = graph->edge;
     struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
@@ -52,18 +52,21 @@ void boruvkaMST(struct Graph *graph) {
     int numTrees = V, MSTweight = 0;
 
     while (numTrees > 1) {
-        for (int i = 0; i < V; i++)
+        for (int i = 0; i < V; i++) {
             cheapest[i] = -1;
+        }
 
         for (int i = 0; i < E; i++) {
             int set1 = find(subsets, edge[i].src);
             int set2 = find(subsets, edge[i].dest);
 
             if (set1 != set2) {
-                if (cheapest[set1] == -1 || edge[cheapest[set1]].weight > edge[i].weight)
+                if (cheapest[set1] == -1 || edge[cheapest[set1]].weight > edge[i].weight) {
                     cheapest[set1] = i;
-                if (cheapest[set2] == -1 || edge[cheapest[set2]].weight > edge[i].weight)
+                }
+                if (cheapest[set2] == -1 || edge[cheapest[set2]].weight > edge[i].weight) {
                     cheapest[set2] = i;
+                }
             }
         }
 
@@ -83,7 +86,8 @@ void boruvkaMST(struct Graph *graph) {
         }
     }
 
-    printf("Total weight of MST: %d\n", MSTweight);
     free(subsets);
     free(cheapest);
+
+    return MSTweight;
 }

@@ -24,6 +24,7 @@ void unionSets(struct Subset subsets[], int x, int y) {
     int rootX = find(subsets, x);
     int rootY = find(subsets, y);
 
+    // Attach smaller rank tree under root of high rank tree
     if (rootX != rootY) {
         if (subsets[rootX].rank < subsets[rootY].rank)
             subsets[rootX].parent = rootY;
@@ -41,21 +42,27 @@ int boruvkaMST(struct Graph *graph) {
     int V = graph->V, E = graph->E;
     struct Edge *edge = graph->edge;
     struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
+    // Cheapest outgoing edge for each component
     int *cheapest = (int *)malloc(V * sizeof(int));
 
+    // Initialize subsets and cheapest array
     for (int v = 0; v < V; v++) {
         subsets[v].parent = v;
         subsets[v].rank = 0;
         cheapest[v] = -1;
     }
 
-    int numTrees = V, MSTweight = 0;
+    // At the beginning we have V trees
+    int num_trees = V, mst_weight = 0;
 
-    while (numTrees > 1) {
+    // Keep combining components until we have only one tree
+    while (num_trees > 1) {
+        // Initialize cheapest array
         for (int i = 0; i < V; i++) {
             cheapest[i] = -1;
         }
 
+        // Traverse through all edges and update cheapest of every component
         for (int i = 0; i < E; i++) {
             int set1 = find(subsets, edge[i].src);
             int set2 = find(subsets, edge[i].dest);
@@ -70,7 +77,9 @@ int boruvkaMST(struct Graph *graph) {
             }
         }
 
+        // Consider the above picked cheapest edges and add them to MST
         for (int i = 0; i < V; i++) {
+            // If cheapest for current set exists
             if (cheapest[i] != -1) {
                 int set1 = find(subsets, edge[cheapest[i]].src);
                 int set2 = find(subsets, edge[cheapest[i]].dest);
@@ -78,9 +87,9 @@ int boruvkaMST(struct Graph *graph) {
                 if (set1 != set2) {
                     printf("Edge %d-%d with weight %d included in MST\n", edge[cheapest[i]].src,
                            edge[cheapest[i]].dest, edge[cheapest[i]].weight);
-                    MSTweight += edge[cheapest[i]].weight;
+                    mst_weight += edge[cheapest[i]].weight;
                     unionSets(subsets, set1, set2);
-                    numTrees--;
+                    num_trees--;
                 }
             }
         }
@@ -89,5 +98,5 @@ int boruvkaMST(struct Graph *graph) {
     free(subsets);
     free(cheapest);
 
-    return MSTweight;
+    return mst_weight;
 }

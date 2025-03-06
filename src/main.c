@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "mpi_mst.h"
 #include "serial_mst.h"
 
-int main(void) {
+void serial_mst(void) {
     int V = 4;  // Number of vertices
     int E = 5;  // Number of edges
     struct Graph *graph = create_graph(V, E);
@@ -19,6 +20,15 @@ int main(void) {
 
     free(graph->edge);
     free(graph);
+}
+
+void mpi_mst(void) {
+    parallel_boruvka_mst(NULL);
+}
+
+int main(void) {
+    // serial_mst();
+    mpi_mst();
 
     return 0;
 }

@@ -1,17 +1,7 @@
-struct Edge {
-    int src, dest, weight;
-};
+#ifndef SERIAL_MST_H
+#define SERIAL_MST_H
 
-struct Graph {
-    int V, E;
-    struct Edge *edge;
-};
-
-// Subset for union-find
-struct Subset {
-    int parent;
-    int rank;
-};
+#include "common.h"
 
 // Create a graph with V vertices and E edges
 struct Graph *create_graph(int V, int E);
@@ -24,3 +14,5 @@ void unionSets(struct Subset subsets[], int x, int y);
 
 // Boruvka's algorithm to find MST
 int boruvkaMST(struct Graph *graph);
+
+#endif  // SERIAL_MST_H

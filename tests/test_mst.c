@@ -4,7 +4,7 @@
 
 #include "serial_mst.h"
 
-void test_mst(void) {
+void test_serial_mst(void) {
     int V = 4;  // Number of vertices
     int E = 5;  // Number of edges
     struct Graph *graph = create_graph(V, E);
@@ -23,6 +23,6 @@ void test_mst(void) {
 }
 
 int main(void) {
-    test_mst();
+    test_serial_mst();
     return 0;
 }

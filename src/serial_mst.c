@@ -12,7 +12,11 @@ struct Graph *create_graph(int V, int E) {
   return graph;
 }
 
-// Find set of an element i (uses path compression)
+/** @brief Find parent of an element i (uses path compression) 
+ * 
+ * @param subset The array of subsets
+ * @param i The node for which we want the parent
+*/
 int find(struct Subset subsets[], int i) {
   if (subsets[i].parent != i) {
     subsets[i].parent = find(subsets, subsets[i].parent);

@@ -3,9 +3,6 @@
 
 #include "common.h"
 
-// Create a graph with V vertices and E edges
-struct Graph *create_graph(int V, int E);
-
 // Find set of an element i (uses path compression)
 int find(struct Subset subsets[], int i);
 

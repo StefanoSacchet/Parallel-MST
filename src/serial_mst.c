@@ -1,22 +1,13 @@
+#include "serial_mst.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "serial_mst.h"
-
-// Create a graph with V vertices and E edges
-struct Graph *create_graph(int V, int E) {
-  struct Graph *graph = (struct Graph *)malloc(sizeof(struct Graph));
-  graph->V = V;
-  graph->E = E;
-  graph->edge = (struct Edge *)malloc(E * sizeof(struct Edge));
-  return graph;
-}
-
-/** @brief Find parent of an element i (uses path compression) 
- * 
+/** @brief Find parent of an element i (uses path compression)
+ *
  * @param subset The array of subsets
  * @param i The node for which we want the parent
-*/
+ */
 int find(struct Subset subsets[], int i) {
   if (subsets[i].parent != i) {
     subsets[i].parent = find(subsets, subsets[i].parent);
@@ -45,7 +36,7 @@ void unionSets(struct Subset subsets[], int x, int y) {
 // Boruvka's algorithm to find MST
 int boruvkaMST(struct Graph *graph) {
   int V = graph->V, E = graph->E;
-  struct Edge *edge = graph->edge;
+  struct Edge *edge = graph->edges;
   struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
   // Cheapest outgoing edge for each component
   int *cheapest = (int *)malloc(V * sizeof(int));
@@ -105,4 +96,3 @@ int boruvkaMST(struct Graph *graph) {
 
   return mst_weight;
 }
-

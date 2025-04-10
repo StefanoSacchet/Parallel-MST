@@ -9,26 +9,22 @@ void serial_mst(void) {
   int E = 5;  // Number of edges
   struct Graph *graph = create_graph(V, E);
 
-  graph->edge[0] = (struct Edge){0, 1, 10};
-  graph->edge[1] = (struct Edge){0, 2, 6};
-  graph->edge[2] = (struct Edge){0, 3, 5};
-  graph->edge[3] = (struct Edge){1, 3, 15};
-  graph->edge[4] = (struct Edge){2, 3, 4};
+  graph->edges[0] = (struct Edge){0, 1, 10};
+  graph->edges[1] = (struct Edge){0, 2, 6};
+  graph->edges[2] = (struct Edge){0, 3, 5};
+  graph->edges[3] = (struct Edge){1, 3, 15};
+  graph->edges[4] = (struct Edge){2, 3, 4};
 
   int mst_weight = boruvkaMST(graph);
   printf("Total weight of MST: %d\n", mst_weight);
 
-  free(graph->edge);
+  free(graph->edges);
   free(graph);
 }
 
-void mpi_mst(void) {
-  parallel_boruvka_mst(NULL);
-}
-
-int main(void) {
+int main(int argc, char *argv[]) {
   // serial_mst();
-  mpi_mst();
+  run_mpi_mst(argc, argv);
 
   return 0;
 }

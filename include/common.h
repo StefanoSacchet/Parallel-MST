@@ -1,19 +1,25 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-struct Edge {
-    int src, dest, weight;
-};
+#include <mpi.h>
 
-struct Graph {
-    int V, E;
-    struct Edge *edge;
-};
+typedef struct Edge {
+  int src, dest, weight;
+} Edge_t;
+
+typedef struct Graph {
+  int V, E;
+  struct Edge *edges;
+} Graph_t;
 
 // Subset for union-find
-struct Subset {
-    int parent;
-    int rank;
-};
+typedef struct Subset {
+  int parent;
+  int rank;
+} Subset_t;
+
+struct Graph *create_graph(int V, int E);
+
+MPI_Datatype MPI_EDGE_T, oldtypes[3];
 
 #endif  // COMMON_H

@@ -24,6 +24,7 @@ set(SOURCES
     src/main.c
     src/serial_mst.c
     src/mpi_mst.c
+    src/common.c
 )
 
 # Define the executable
@@ -34,5 +35,5 @@ target_link_libraries(${PROJECT_NAME} MPI::MPI_C)
 
 # Enable Testing
 enable_testing()
-add_executable(test_all tests/test_mst.c src/serial_mst.c)
+add_executable(test_all tests/test_mst.c src/serial_mst.c src/common.c)
 add_test(NAME MST_Test COMMAND test_all)

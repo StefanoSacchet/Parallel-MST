@@ -6,6 +6,26 @@
 
 #include "common.h"
 
+void custom_mpi_types(int *blocklengths, MPI_Aint *offsets) {
+  // Field src
+  offsets[0] = offsetof(Edge_t, src);
+  oldtypes[0] = MPI_INT;
+  blocklengths[0] = 1;
+
+  // Field dest
+  offsets[1] = offsetof(Edge_t, dest);
+  oldtypes[1] = MPI_INT;
+  blocklengths[1] = 1;
+
+  // Field weight
+  offsets[2] = offsetof(Edge_t, weight);
+  oldtypes[2] = MPI_INT;
+  blocklengths[2] = 1;
+
+  MPI_Type_create_struct(3, blocklengths, offsets, oldtypes, &MPI_EDGE_T);
+  MPI_Type_commit(&MPI_EDGE_T);
+}
+
 void scatterEdgeList(Edge_t *edges, Edge_t *edges_part, const int n_edges, int *edges_per_core) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -46,7 +66,6 @@ int mpi_mst(struct Graph *graph, struct Graph *mst) {
 
 void run_mpi_mst(int argc, char *argv[]) {
   int rank, size;
-
   // Custom types
   int blocklengths[3];
   MPI_Aint offsets[3];
@@ -55,20 +74,7 @@ void run_mpi_mst(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  // Field src
-  offsets[0] = offsetof(Edge_t, src);
-  oldtypes[0] = MPI_INT;
-  blocklengths[0] = 1;
-
-  // Field dest
-  offsets[1] = offsetof(Edge_t, dest);
-  oldtypes[1] = MPI_INT;
-  blocklengths[1] = 1;
-
-  // Field weight
-  offsets[2] = offsetof(Edge_t, weight);
-  oldtypes[2] = MPI_INT;
-  blocklengths[2] = 1;
+  custom_mpi_types(blocklengths, offsets);
 
   MPI_Type_create_struct(3, blocklengths, offsets, oldtypes, &MPI_EDGE_T);
   MPI_Type_commit(&MPI_EDGE_T);
@@ -84,20 +90,20 @@ void run_mpi_mst(int argc, char *argv[]) {
       .edges = NULL,
   };
 
-  double start = 0;
+  double start_time = 0;
 
   if (rank == 0) {
     int V = 4;  // Number of vertices
     int E = 5;  // Number of edges
     graph = create_graph(V, E);
 
-    graph->edges[0] = (struct Edge){0, 1, 10};
-    graph->edges[1] = (struct Edge){0, 2, 6};
-    graph->edges[2] = (struct Edge){0, 3, 5};
-    graph->edges[3] = (struct Edge){1, 3, 15};
-    graph->edges[4] = (struct Edge){2, 3, 4};
+    graph->edges[0] = (Edge_t){0, 1, 10};
+    graph->edges[1] = (Edge_t){0, 2, 6};
+    graph->edges[2] = (Edge_t){0, 3, 5};
+    graph->edges[3] = (Edge_t){1, 3, 15};
+    graph->edges[4] = (Edge_t){2, 3, 4};
 
-    start = MPI_Wtime();
+    start_time = MPI_Wtime();
   }
 
   // If number of processes is much greater than number of edges
@@ -113,7 +119,7 @@ void run_mpi_mst(int argc, char *argv[]) {
 
   if (rank == 0) {
     double end = MPI_Wtime();
-    printf("Total time: %f\n", end - start);
+    printf("Total time: %f\n", end - start_time);
     printf("Total weight of MST: %d\n", mst_weight);
   }
 

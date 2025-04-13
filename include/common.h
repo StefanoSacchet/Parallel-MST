@@ -20,6 +20,4 @@ typedef struct Subset {
 
 struct Graph *create_graph(int V, int E);
 
-MPI_Datatype MPI_EDGE_T, oldtypes[3];
-
 #endif  // COMMON_H

@@ -25,6 +25,7 @@ set(SOURCES
     src/serial_mst.c
     src/mpi_mst.c
     src/common.c
+    src/mpi_types.c
 )
 
 # Define the executable

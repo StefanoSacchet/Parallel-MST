@@ -56,3 +56,5 @@ dkms.conf
 .last_compilation_mode
 .vscode
 .cache/
+.venv/
+logs/

@@ -20,13 +20,7 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
 # Add sources
-set(SOURCES
-    src/main.c
-    src/serial_mst.c
-    src/mpi_mst.c
-    src/common.c
-    src/mpi_types.c
-)
+file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 
 # Define the executable
 add_executable(${PROJECT_NAME} ${SOURCES})

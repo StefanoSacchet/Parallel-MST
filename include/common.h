@@ -19,5 +19,6 @@ typedef struct Subset {
 } Subset_t;
 
 struct Graph *create_graph(int V, int E);
+void free_graph(struct Graph *graph);
 
 #endif  // COMMON_H

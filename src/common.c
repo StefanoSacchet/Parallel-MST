@@ -10,3 +10,10 @@ struct Graph *create_graph(int V, int E) {
   graph->edges = (struct Edge *)malloc(E * sizeof(struct Edge));
   return graph;
 }
+
+void free_graph(struct Graph *graph) {
+  if (graph) {
+    free(graph->edges);
+    free(graph);
+  }
+}

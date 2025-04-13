@@ -16,7 +16,9 @@ typedef struct Subset {
   int rank;
 } Subset_t;
 
+// Initialize `graph` with `V` vertices and `E` edges
 void init_graph(Graph_t *graph, int V, int E);
+// Deallocate the graph
 void free_graph(struct Graph *graph);
 
 #endif  // COMMON_H

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "logger.h"
 #include "mpi_types.h"
 #include "tools/graph_parser.h"
 
@@ -41,6 +42,8 @@ uint64_t mpi_mst(struct Graph *graph, struct Graph *mst) {
 }
 
 void run_mpi_mst(int argc, char *argv[]) {
+  const char *file_name = argv[1];
+
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -61,7 +64,7 @@ void run_mpi_mst(int argc, char *argv[]) {
   double start_time = 0;
 
   if (rank == 0) {
-    parse_graph_file(graph, argv[1]);
+    parse_graph_file(graph, file_name);
     init_graph(mst, graph->V, graph->V - 1);
     start_time = MPI_Wtime();
   }
@@ -78,9 +81,12 @@ void run_mpi_mst(int argc, char *argv[]) {
   u_int64_t mst_weight = mpi_mst(graph, mst);
 
   if (rank == 0) {
-    double end = MPI_Wtime();
-    printf("Total time: %f\n", end - start_time);
+    double total_time = MPI_Wtime() - start_time;
+    printf("Total time: %f\n", total_time);
     printf("Total weight of MST: %llu\n", mst_weight);
+
+    // Log resutls to file
+    log_result(file_name, size, total_time);
 
     // Free graph memory
     free_graph(mst);

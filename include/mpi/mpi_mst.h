@@ -8,9 +8,11 @@
 
 #include "common.h"
 
-void custom_mpi_types(int *blocklengths, MPI_Aint *offsets);
+// Scatter edge list to all processes
 void scatter_edge_list(Edge_t *edges, Edge_t *edges_part, const int n_edges, int *edges_per_core);
+// Run MPI MST
 void run_mpi_mst(int argc, char *argv[]);
+// Boruvka's algorithm with MPI
 uint64_t mpi_mst(struct Graph *graph, struct Graph *mst);
 
 #endif  // MPI_MST_H

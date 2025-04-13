@@ -1,13 +1,16 @@
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "common.h"
 #include "mpi_mst.h"
 #include "serial_mst.h"
 
 void serial_mst(void) {
   int V = 4;  // Number of vertices
   int E = 5;  // Number of edges
-  struct Graph *graph = create_graph(V, E);
+  Graph_t *graph = &(Graph_t){
+      .V = 0,
+      .E = 0,
+      .edges = NULL,
+  };
+  init_graph(graph, V, E);
 
   graph->edges[0] = (struct Edge){0, 1, 10};
   graph->edges[1] = (struct Edge){0, 2, 6};
@@ -18,8 +21,7 @@ void serial_mst(void) {
   int mst_weight = boruvkaMST(graph);
   printf("Total weight of MST: %d\n", mst_weight);
 
-  free(graph->edges);
-  free(graph);
+  free_graph(graph);
 }
 
 int main(int argc, char *argv[]) {

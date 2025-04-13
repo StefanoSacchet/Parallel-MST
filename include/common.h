@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <mpi.h>
-
 typedef struct Edge {
   int src, dest, weight;
 } Edge_t;
@@ -18,7 +16,7 @@ typedef struct Subset {
   int rank;
 } Subset_t;
 
-struct Graph *create_graph(int V, int E);
+void init_graph(Graph_t *graph, int V, int E);
 void free_graph(struct Graph *graph);
 
 #endif  // COMMON_H

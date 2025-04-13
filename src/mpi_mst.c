@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "mpi_types.h"
+#include "tools/graph_parser.h"
 
 static MPI_Datatype MPI_EDGE_T;
 static int rank, size;
@@ -60,17 +61,8 @@ void run_mpi_mst(int argc, char *argv[]) {
   double start_time = 0;
 
   if (rank == 0) {
-    int vertices = 4;  // Number of vertices
-    int edges = 5;     // Number of edges
-    graph = create_graph(vertices, edges);
-    mst = create_graph(vertices, vertices - 1);
-
-    graph->edges[0] = (Edge_t){0, 1, 10};
-    graph->edges[1] = (Edge_t){0, 2, 6};
-    graph->edges[2] = (Edge_t){0, 3, 5};
-    graph->edges[3] = (Edge_t){1, 3, 15};
-    graph->edges[4] = (Edge_t){2, 3, 4};
-
+    parse_graph_file(graph, "small.txt");
+    init_graph(mst, graph->V, graph->V - 1);
     start_time = MPI_Wtime();
   }
 

@@ -13,14 +13,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Include directories
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/include/tools
+)
 
 # Find MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 
 # Add sources
-file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 
 # Define the executable
 add_executable(${PROJECT_NAME} ${SOURCES})

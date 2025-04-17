@@ -1,6 +1,8 @@
 #include "mpi_mst.h"
 
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "logger.h"
 #include "mpi_types.h"
@@ -9,6 +11,12 @@
 static MPI_Datatype MPI_EDGE_T;
 static int rank, size;
 
+/** @brief Dispatch edges to all processes
+ *  @param edges The list containing all edges
+ *  @param edges_part The list containing the edges for this process
+ *  @param n_edges The number of edges in the graph
+ *  @param edges_per_core The number of edges per core
+ */
 void scatter_edge_list(Edge_t *edges, Edge_t *edges_part, const int n_edges, int *edges_per_core) {
   MPI_Scatter(edges, *edges_per_core, MPI_EDGE_T, edges_part, *edges_per_core, MPI_EDGE_T, 0,
               MPI_COMM_WORLD);
@@ -19,9 +27,10 @@ void scatter_edge_list(Edge_t *edges, Edge_t *edges_part, const int n_edges, int
   }
 }
 
-uint64_t mpi_mst(struct Graph *graph, struct Graph *mst) {
+void mpi_mst(struct Graph *graph, struct Graph *mst) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Status status;
 
   // Send number of edges and vertices
   int n_edges;
@@ -38,9 +47,101 @@ uint64_t mpi_mst(struct Graph *graph, struct Graph *mst) {
   Edge_t *edges_part = (Edge_t *)malloc(edges_per_core * sizeof(Edge_t));
   scatter_edge_list(graph->edges, edges_part, n_edges, &edges_per_core);
 
-  return 0;
+  // init set
+  Subset_t *subsets = (Subset_t *)malloc(n_vertices * sizeof(Subset_t));
+
+  int edges_mst = 0;
+  // Cheapest outgoing edge for each component
+  int *cheapest = (int *)malloc(n_vertices * sizeof(int));
+	int* cheapest_edge_received = (int*)malloc(n_vertices * sizeof(int));
+
+  // Initialize subsets and cheapest array
+  for (int v = 0; v < n_vertices; v++) {
+    subsets[v].parent = v;
+    subsets[v].rank = 0;
+    cheapest[v] = -1;
+  }
+
+  for (int i = 0; i < n_vertices && edges_mst < n_vertices - 1; i++) {
+    // reset cheapest edges array
+    for (int j = 0; j < n_vertices; j++) {
+      cheapest[j] = -1;
+    }
+
+    // Traverse through all edges and update cheapest of every component
+    for (int j = 0; j < edges_per_core; j++) {
+      Edge_t current_edge = edges_part[j];
+      int set1 = find(subsets, current_edge.src);
+      int set2 = find(subsets, current_edge.dest);
+
+      if (set1 != set2) {
+        if (cheapest[set1] == -1 || edges_part[cheapest[set1]].weight > current_edge.weight) {
+          cheapest[set1] = j;
+        }
+        if (cheapest[set2] == -1 || edges_part[cheapest[set2]].weight > current_edge.weight) {
+          cheapest[set2] = j;
+        }
+      }
+    }
+
+    // printf("rank: %d\n", rank);
+    // for (int k = 0; k < n_vertices; k++) {
+    //   printf("cheapest[%d] = %d\n", k, cheapest[k]);
+    //   if (cheapest[k] != -1) {
+    //     printf("[%d] src = %d | dest = %d | weight = %d\n", k, edges_part[cheapest[k]].src, edges_part[cheapest[k]].dest, edges_part[cheapest[k]].weight);  
+    //   }
+    // }
+
+    int from;
+    int to;
+    for (int step = 1; step < size; step *= 2) {
+      if (rank % (2 * step) == 0) {
+        from = rank + step;
+        if (from < size) {
+          MPI_Recv(cheapest_edge_received, n_vertices, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
+
+          // combine cheapest edges
+          for (int j = 0; j < n_vertices; j++) {
+            // int current_vertex = j;
+            if (edges_part[cheapest_edge_received[j]].weight < edges_part[cheapest[j]].weight) {
+              cheapest[j] = cheapest_edge_received[j];
+            }
+          }
+        }
+      } else if (rank % step == 0) {
+        to = rank - step;
+        MPI_Send(cheapest, n_vertices, MPI_INT, to, 0, MPI_COMM_WORLD);
+      }
+    }
+
+    MPI_Bcast(cheapest, n_vertices, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    // add new edges to MST
+    for (int j = 0; j < n_vertices; j++) {
+      if (cheapest[j] != -1) {
+        Edge_t edge = edges_part[cheapest[j]];
+        
+        int from = find(subsets, edge.src);
+        int to = find(subsets, edge.dest);
+      
+        if (from != to) {
+          if (rank == 0) {
+            mst->edges[edges_mst] = edge;
+            printf("Edge %d-%d with weight %d included in MST\n", edge.src,
+              edge.dest, edge.weight);
+            }
+          }
+          edges_mst++;
+          unionSets(subsets, from, to);
+      }
+    }
+  }
 }
 
+/** @brief Run the parallel version of Boruvka algorithm using MPI
+ *  @param argc Number of arguments
+ *  @param argv Array of arguments
+ */
 void run_mpi_mst(int argc, char *argv[]) {
   const char *file_name = argv[1];
 
@@ -78,13 +179,20 @@ void run_mpi_mst(int argc, char *argv[]) {
   /*  exit(EXIT_FAILURE);*/
   /*}*/
 
-  u_int64_t mst_weight = mpi_mst(graph, mst);
+  // mpi_mst(graph, mst);
 
   if (rank == 0) {
     double total_time = MPI_Wtime() - start_time;
     printf("Total time: %f\n", total_time);
-    printf("Total weight of MST: %llu\n", mst_weight);
+    
+    unsigned long mst_weight = 0;
+		for (int i = 0; i < mst->E; i++) {
+      mst_weight += mst->edges[i].weight;
+		}
 
+    printf("MST edges: %d\n", mst->E);
+    
+    printf("Total weight of MST: %lu\n", mst_weight);
     // Log resutls to file
     log_result(file_name, size, total_time);
 

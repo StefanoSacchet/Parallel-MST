@@ -21,4 +21,14 @@ void init_graph(Graph_t *graph, int V, int E);
 // Deallocate the graph
 void free_graph(struct Graph *graph);
 
+/** @brief Find parent of an element i (uses path compression)
+ *
+ * @param subset The array of subsets
+ * @param i The node for which we want the parent
+ */
+int find(struct Subset subsets[], int i);
+
+// Union of two sets by rank
+void unionSets(struct Subset subsets[], int x, int y);
+
 #endif  // COMMON_H

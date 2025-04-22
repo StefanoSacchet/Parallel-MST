@@ -122,8 +122,8 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
             printf("Edge %d-%d with weight %d included in MST\n", edge.src,
               edge.dest, edge.weight);
             }
+            edges_mst++;
           }
-          edges_mst++;
           unionSets(subsets, from, to);
       }
     }

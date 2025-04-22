@@ -8,8 +8,14 @@
 
 #include "common.h"
 
-// Scatter edge list to all processes
-void scatter_edge_list(Edge_t *edges, Edge_t *edges_part, const int n_edges, int *edges_per_core);
+/** @brief Dispatch edges to all processes
+ *  @param edges The list containing all edges
+ *  @param edges_part The list containing the edges for this process
+ *  @param n_edges The number of edges in the graph
+ *  @param edges_per_core The number of edges per core
+ */
+void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const int n_edges,
+                       int *edges_per_core, int rank, int size);
 // Run MPI MST
 void run_mpi_mst(int argc, char *argv[]);
 // Boruvka's algorithm with MPI

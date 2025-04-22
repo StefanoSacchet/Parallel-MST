@@ -44,7 +44,7 @@ int boruvkaMST(struct Graph *graph) {
     }
 
     for (int k = 0; k < V; k++) {
-      printf("cheapest[%d] = %d\n", k, cheapest[k]);  
+      printf("cheapest[%d] = %d\n", k, cheapest[k]);
     }
 
     // Consider the above picked cheapest edges and add them to MST

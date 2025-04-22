@@ -1,8 +1,7 @@
 #include "mpi_mst.h"
 
-#include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "logger.h"
 #include "mpi_types.h"
@@ -11,20 +10,49 @@
 static MPI_Datatype MPI_EDGE_T;
 static int rank, size;
 
-/** @brief Dispatch edges to all processes
- *  @param edges The list containing all edges
- *  @param edges_part The list containing the edges for this process
- *  @param n_edges The number of edges in the graph
- *  @param edges_per_core The number of edges per core
- */
-void scatter_edge_list(Edge_t *edges, Edge_t *edges_part, const int n_edges, int *edges_per_core) {
-  MPI_Scatter(edges, *edges_per_core, MPI_EDGE_T, edges_part, *edges_per_core, MPI_EDGE_T, 0,
-              MPI_COMM_WORLD);
+void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const int n_edges,
+                       int *edges_per_core, int rank, int size) {
+  // Calculate base edges per core and remainder
+  *edges_per_core = n_edges / size;
+  int remainder = n_edges % size;
 
-  // Calculate reminder for last process
-  if (rank == size - 1 && n_edges % *edges_per_core != 0) {
-    *edges_per_core = n_edges % *edges_per_core;
+  // Last process gets the remainder
+  int recv_count = *edges_per_core + (rank == size - 1 ? remainder : 0);
+
+  // Reallocate memory if needed (safely handles NULL input)
+  *edges_part_ptr = (Edge_t *)realloc(*edges_part_ptr, recv_count * sizeof(Edge_t));
+  if (*edges_part_ptr == NULL && recv_count > 0) {
+    perror("Failed to allocate memory for edge partition");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
+
+  // Prepare send counts and displacements for uneven distribution
+  int *send_counts = NULL;
+  int *displs = NULL;
+
+  if (rank == 0) {
+    send_counts = (int *)malloc(size * sizeof(int));
+    displs = (int *)malloc(size * sizeof(int));
+
+    int offset = 0;
+    for (int i = 0; i < size; i++) {
+      send_counts[i] = *edges_per_core + (i == size - 1 ? remainder : 0);
+      displs[i] = offset;
+      offset += send_counts[i];
+    }
+  }
+
+  // Use MPI_Scatterv for uneven distribution
+  MPI_Scatterv(edges, send_counts, displs, MPI_EDGE_T, *edges_part_ptr, recv_count, MPI_EDGE_T, 0,
+               MPI_COMM_WORLD);
+
+  if (rank == 0) {
+    free(send_counts);
+    free(displs);
+  }
+
+  // Update edges_per_core to actual received count
+  *edges_per_core = recv_count;
 }
 
 void mpi_mst(struct Graph *graph, struct Graph *mst) {
@@ -42,10 +70,10 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
   MPI_Bcast(&n_edges, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&n_vertices, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // scatter the edges to search in them
-  int edges_per_core = (n_edges + size - 1) / size;
-  Edge_t *edges_part = (Edge_t *)malloc(edges_per_core * sizeof(Edge_t));
-  scatter_edge_list(graph->edges, edges_part, n_edges, &edges_per_core);
+  // Scatter the edges to search in them
+  int edges_per_core = 0;     // Will be set by scatter
+  Edge_t *edges_part = NULL;  // Initialize to NULL for realloc safety
+  scatter_edge_list(graph->edges, &edges_part, n_edges, &edges_per_core, rank, size);
 
   // init set
   Subset_t *subsets = (Subset_t *)malloc(n_vertices * sizeof(Subset_t));
@@ -53,7 +81,7 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
   int edges_mst = 0;
   // Cheapest outgoing edge for each component
   Edge_t *cheapest = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-	Edge_t* cheapest_edge_received = (Edge_t*)malloc(n_vertices * sizeof(Edge_t));
+  Edge_t *cheapest_edge_received = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
 
   // Initialize subsets and cheapest array
   for (int v = 0; v < n_vertices; v++) {
@@ -90,12 +118,15 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
       if (rank % (2 * step) == 0) {
         from = rank + step;
         if (from < size) {
-          MPI_Recv(cheapest_edge_received, n_vertices, MPI_EDGE_T, from, 0, MPI_COMM_WORLD, &status);
+          MPI_Recv(cheapest_edge_received, n_vertices, MPI_EDGE_T, from, 0, MPI_COMM_WORLD,
+                   &status);
 
           // combine cheapest edges
           for (int j = 0; j < n_vertices; j++) {
             // int current_vertex = j;
-            if (cheapest_edge_received[j].weight != -1 && (cheapest[j].weight == -1 || cheapest_edge_received[j].weight < cheapest[j].weight)) {
+            if (cheapest_edge_received[j].weight != -1 &&
+                (cheapest[j].weight == -1 ||
+                 cheapest_edge_received[j].weight < cheapest[j].weight)) {
               cheapest[j] = cheapest_edge_received[j];
             }
           }
@@ -110,21 +141,19 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
     // add new edges to MST
     for (int j = 0; j < n_vertices; j++) {
       if (cheapest[j].weight != -1) {
-
         Edge_t edge = cheapest[j];
-        
+
         int from = find(subsets, edge.src);
         int to = find(subsets, edge.dest);
-      
+
         if (from != to) {
           if (rank == 0) {
             mst->edges[edges_mst] = edge;
-            printf("Edge %d-%d with weight %d included in MST\n", edge.src,
-              edge.dest, edge.weight);
-            }
-            edges_mst++;
+            printf("Edge %d-%d with weight %d included in MST\n", edge.src, edge.dest, edge.weight);
           }
-          unionSets(subsets, from, to);
+          edges_mst++;
+        }
+        unionSets(subsets, from, to);
       }
     }
   }
@@ -181,14 +210,14 @@ void run_mpi_mst(int argc, char *argv[]) {
   if (rank == 0) {
     double total_time = MPI_Wtime() - start_time;
     printf("Total time: %f\n", total_time);
-    
+
     unsigned long mst_weight = 0;
-		for (int i = 0; i < mst->E; i++) {
+    for (int i = 0; i < mst->E; i++) {
       mst_weight += mst->edges[i].weight;
-		}
+    }
 
     printf("MST edges: %d\n", mst->E);
-    
+
     printf("Total weight of MST: %lu\n", mst_weight);
     // Log resutls to file
     log_result(file_name, size, total_time);

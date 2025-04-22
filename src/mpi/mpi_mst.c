@@ -62,7 +62,7 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
     cheapest[v].weight = -1;
   }
 
-  for (int i = 0; i < n_vertices && edges_mst < n_vertices - 1; i++) {
+  for (int i = 1; i < n_vertices && edges_mst < n_vertices - 1; i *= 2) {
     // reset cheapest edges array
     for (int j = 0; j < n_vertices; j++) {
       cheapest[j].weight = -1;
@@ -105,7 +105,7 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
         MPI_Send(cheapest, n_vertices, MPI_EDGE_T, to, 0, MPI_COMM_WORLD);
       }
     }
-    MPI_Bcast(cheapest, n_vertices, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cheapest, n_vertices, MPI_EDGE_T, 0, MPI_COMM_WORLD);
 
     // add new edges to MST
     for (int j = 0; j < n_vertices; j++) {
@@ -122,12 +122,11 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
             printf("Edge %d-%d with weight %d included in MST\n", edge.src,
               edge.dest, edge.weight);
             }
-            edges_mst++;
           }
+          edges_mst++;
           unionSets(subsets, from, to);
       }
     }
-    MPI_Bcast(&edges_mst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
   free(edges_part);

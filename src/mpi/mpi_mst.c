@@ -62,7 +62,7 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
     cheapest[v].weight = -1;
   }
 
-  for (int i = 1; i < n_vertices && edges_mst < n_vertices - 1; i *= 2) {
+  for (int i = 0; i < n_vertices && edges_mst < n_vertices - 1; i++) {
     // reset cheapest edges array
     for (int j = 0; j < n_vertices; j++) {
       cheapest[j].weight = -1;

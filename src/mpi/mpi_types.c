@@ -1,6 +1,7 @@
 #include "mpi_types.h"
 
 #include "common.h"
+#include "stddef.h"
 
 void create_mpi_edge_type(MPI_Datatype *mpi_edge_t) {
   int blocklengths[3] = {1, 1, 1};

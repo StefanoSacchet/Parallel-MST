@@ -20,16 +20,17 @@ define exec_permission
 	chmod +x load_modules.sh;
 	chmod +x run_hpc.sh;
 	chmod +x run_mpi.sh;
+endef
 
 debug:
+	@$(call exec_permission)
 	@$(call setup_folder, build/debug) \
-	@$(call exec_permission) \
  	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
 	make -j$(CORES);
 
 release:
+	@$(call exec_permission)
 	@$(call setup_folder, build/release) \
-	@$(call exec_permission) \
 	cmake ../.. -DCMAKE_BUILD_TYPE=Release; \
 	make -j$(CORES);
 

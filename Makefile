@@ -54,8 +54,8 @@ test: debug
 # ONLY FOR HPC
 
 load-modules:
-	module load cmake-3.15.4
-	module load mpich-3.2
+	@echo "Loading modules..."
+	./load_modules.sh
 
 # submit:
 # 	@echo "Submitting job..."

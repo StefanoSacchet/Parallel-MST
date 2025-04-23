@@ -16,13 +16,20 @@ define setup_folder
 	cd $(1);
 endef
 
+define exec_permission
+	chmod +x load_modules.sh;
+	chmod +x run_hpc.sh;
+	chmod +x run_mpi.sh;
+
 debug:
 	@$(call setup_folder, build/debug) \
+	@$(call exec_permission) \
  	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
 	make -j$(CORES);
 
 release:
 	@$(call setup_folder, build/release) \
+	@$(call exec_permission) \
 	cmake ../.. -DCMAKE_BUILD_TYPE=Release; \
 	make -j$(CORES);
 

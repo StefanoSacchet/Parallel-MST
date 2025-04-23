@@ -53,7 +53,7 @@ test: debug
 
 # ONLY FOR HPC
 
-load-modules:
+load:
 	@echo "Loading modules..."
 	./load_modules.sh
 

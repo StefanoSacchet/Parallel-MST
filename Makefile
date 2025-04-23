@@ -54,8 +54,7 @@ test: debug
 # ONLY FOR HPC
 
 load:
-	@echo "Loading modules..."
-	./load_modules.sh
+	@echo "Run: source load_modules.sh"
 
 # submit:
 # 	@echo "Submitting job..."

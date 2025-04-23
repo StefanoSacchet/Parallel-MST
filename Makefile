@@ -70,6 +70,10 @@ cancel-jobs:
 		qdel $$job; \
 	done
 
+remove-out:
+	@echo "Removing output files..."
+	rm parallel_mst.*
+
 help:
 	@echo "Usage: make [target]"
 	@echo ""
@@ -84,4 +88,5 @@ help:
 	@echo "  submit             Submit a job to the HPC queue"
 	@echo "  monitor            Monitor the status of submitted jobs"
 	@echo "  cancel-jobs        Cancel all submitted jobs"
+	@echo "  remove-out         Remove output files"
 

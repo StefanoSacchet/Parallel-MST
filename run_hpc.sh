@@ -18,6 +18,7 @@ cat <<EOF > "$job_script"
 #PBS -l select=1:ncpus=$num_processes:mem=2gb
 #PBS -l walltime=00:01:00
 #PBS -q short_cpuQ
+#PBS -N parallel_mst
 mpirun.actual -n $num_processes ${PWD}/build/debug/bin/parallel_mst "$input_file"
 EOF
 

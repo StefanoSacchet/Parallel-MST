@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -15,7 +16,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   snprintf(path, sizeof(path), "%s/%s", DATASET_DIR, filename);
   FILE *file = fopen(path, "r");
   if (!file) {
-    perror("Error opening graph file");
+    fprintf(stderr, "Error opening graph file: %s | PWD: %s\n", path, getcwd(NULL, 0));
     exit(EXIT_FAILURE);
   }
 

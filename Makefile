@@ -50,3 +50,39 @@ test: debug
 	make -j$(CORES) test_all; \
 	ctest --output-on-failure; \
 	cd -;
+
+# ONLY FOR HPC
+
+load-modules:
+	module load cmake-3.15.4
+	module load mpich-3.2
+
+# submit:
+# 	@echo "Submitting job..."
+# 	./run_hpc.sh
+
+monitor:
+	@watch "qstat -u $(USER)"
+
+cancel-jobs:
+	@echo "Canceling all jobs..."
+	@for job in `qstat -u $(USER) | grep "hpc-hea" | awk '{print $$1}' | cut -d'.' -f1`; do \
+		echo "Canceling job $$job"; \
+		qdel $$job; \
+	done
+
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  release            Build the project in release mode"
+	@echo "  debug              Build the project in debug mode"
+	@echo "  clean              Clean the build directory"
+	@echo "  format             Format the source code using clang-format"
+	@echo "  check-formatting-deps Check if clang-format is installed"
+	@echo "  test               Run tests and generate"
+	@echo "  load-modules       Load necessary modules for HPC"
+	@echo "  submit             Submit a job to the HPC queue"
+	@echo "  monitor            Monitor the status of submitted jobs"
+	@echo "  cancel-jobs        Cancel all submitted jobs"
+

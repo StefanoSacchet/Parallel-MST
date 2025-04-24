@@ -23,15 +23,13 @@ define exec_permission
 endef
 
 debug:
-	@$(call exec_permission)
 	@$(call setup_folder, build/debug) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
+ 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=OFF; \
 	make -j$(CORES);
 
 release:
-	@$(call exec_permission)
 	@$(call setup_folder, build/release) \
-	cmake ../.. -DCMAKE_BUILD_TYPE=Release; \
+	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=OFF; \
 	make -j$(CORES);
 
 clean:
@@ -60,6 +58,18 @@ test: debug
 	cd -;
 
 # ONLY FOR HPC
+
+hpc:
+	@$(call exec_permission)
+	@$(call setup_folder, build/debug) \
+	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=ON; \
+	make -j$(CORES);
+
+release-hpc:
+	@$(call exec_permission)
+	@$(call setup_folder, build/release) \
+ 	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=ON; \
+	make -j$(CORES);
 
 load:
 	@echo "Run: source load_modules.sh"
@@ -92,6 +102,8 @@ help:
 	@echo "  format             Format the source code using clang-format"
 	@echo "  check-formatting-deps Check if clang-format is installed"
 	@echo "  test               Run tests and generate"
+	@echo "  hpc                Build the project for HPC"
+	@echo "  release-hpc        Build the project for HPC in release mode"
 	@echo "  load-modules       Load necessary modules for HPC"
 	@echo "  submit             Submit a job to the HPC queue"
 	@echo "  monitor            Monitor the status of submitted jobs"

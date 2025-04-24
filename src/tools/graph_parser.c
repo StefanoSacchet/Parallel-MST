@@ -9,7 +9,7 @@
 
 #define PATH_LEN 256
 #define MAX_LINE_LENGTH 256
-#define DATASET_DIR "dataset"
+/*#define DATASET_DIR "dataset"*/
 
 void parse_graph_file(Graph_t *graph, const char *filename) {
   char path[PATH_LEN];

@@ -4,6 +4,15 @@ project(parallel_mst C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
+option(USE_HPC "Enable HPC-specific settings" OFF)
+if(USE_HPC)
+    message(STATUS "HPC settings enabled")
+    add_definitions(-DDATASET_DIR=\"/${CMAKE_CURRENT_SOURCE_DIR}/dataset\")
+else()
+    message(STATUS "HPC settings disabled")
+    add_definitions(-DDATASET_DIR=\"dataset\")
+endif()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -O0 -Wall -Wextra -pedantic") # -Werror
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG -w -fPIC")

@@ -2,31 +2,27 @@
 #include "mpi_mst.h"
 #include "serial_mst.h"
 
-void serial_mst(void) {
-  int V = 4;  // Number of vertices
-  int E = 5;  // Number of edges
-  Graph_t *graph = &(Graph_t){
-      .V = 0,
-      .E = 0,
-      .edges = NULL,
-  };
-  init_graph(graph, V, E);
+#include <stdlib.h>
 
-  graph->edges[0] = (struct Edge){0, 1, 10};
-  graph->edges[1] = (struct Edge){0, 2, 6};
-  graph->edges[2] = (struct Edge){0, 3, 5};
-  graph->edges[3] = (struct Edge){1, 3, 15};
-  graph->edges[4] = (struct Edge){2, 3, 4};
-
-  int mst_weight = boruvkaMST(graph);
-  printf("Total weight of MST: %d\n", mst_weight);
-
-  free_graph(graph);
-}
+#if !defined(SERIAL) && !defined(MPI)
+#define SERIAL
+#endif
 
 int main(int argc, char *argv[]) {
-  // serial_mst();
-  run_mpi_mst(argc, argv);
+
+  if (argc != 2) {
+    printf("Usage: ./parallel_ms <file_name>\n");
+    return 1;
+  }
+  
+  #ifdef SERIAL
+    printf("Running in SERIAL mode\n");
+    run_serial_mst(argv);
+  #elif defined(MPI)
+    run_mpi_mst(argc, argv);
+  #else
+    #error "Invalid RUN_TYPE: must be SERIAL or MPI"
+  #endif
 
   return 0;
 }

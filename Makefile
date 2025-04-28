@@ -1,6 +1,23 @@
 MAKEFLAGS += --no-print-directory
 CORES = $(shell nproc)
 
+# Allowed run types 
+VALID_RUN_TYPES := SERIAL MPI
+
+$(info ==========================================)
+ifndef RUN_TYPE
+$(info [INFO] RUN_TYPE not set — using default: SERIAL)
+$(info [INFO] Available options: SERIAL | MPI)
+RUN_TYPE = SERIAL
+endif
+
+ifeq ($(filter $(RUN_TYPE), $(VALID_RUN_TYPES)),)
+$(error [ERROR] Invalid RUN_TYPE "$(RUN_TYPE)". Must be one of $(VALID_RUN_TYPES))
+endif
+
+$(info [INFO] Using RUN_TYPE "$(RUN_TYPE)")
+$(info ==========================================)
+
 .PHONY: release debug clean format check-formatting-deps
 
 define setup_folder
@@ -24,12 +41,12 @@ endef
 
 debug:
 	@$(call setup_folder, build/debug) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=OFF; \
+ 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 release:
 	@$(call setup_folder, build/release) \
-	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=OFF; \
+	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 clean:
@@ -49,26 +66,26 @@ check-formatting-deps:
 		exit 1; \
 	}
 
-test: debug
-	@set -e; \
-	$(call setup_folder, build/debug) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
-	make -j$(CORES) test_all; \
-	ctest --output-on-failure; \
-	cd -;
+# test: debug
+# 	@set -e; \
+# 	$(call setup_folder, build/debug) \
+#  	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
+# 	make -j$(CORES) test_all; \
+# 	ctest --output-on-failure; \
+# 	cd -;
 
 # ONLY FOR HPC
 
 hpc:
 	@$(call exec_permission)
 	@$(call setup_folder, build/debug) \
-	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=ON; \
+	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 release-hpc:
 	@$(call exec_permission)
 	@$(call setup_folder, build/release) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=ON; \
+ 	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 load:

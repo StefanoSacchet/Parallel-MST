@@ -13,6 +13,10 @@ else()
     add_definitions(-DDATASET_DIR=\"dataset\")
 endif()
 
+if(DEFINED RUN_TYPE)
+    add_compile_definitions("${RUN_TYPE}")
+endif()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -O0 -Wall -Wextra -pedantic") # -Werror
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG -w -fPIC")
@@ -43,5 +47,5 @@ target_link_libraries(${PROJECT_NAME} MPI::MPI_C)
 
 # Enable Testing
 enable_testing()
-add_executable(test_all tests/test_mst.c src/serial_mst.c src/common.c)
+add_executable(test_all tests/test_mst.c src/serial_mst.c src/common.c src/tools/graph_parser.c)
 add_test(NAME MST_Test COMMAND test_all)

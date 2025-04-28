@@ -19,7 +19,7 @@ void test_serial_mst(void) {
   graph->edges[3] = (struct Edge){1, 3, 15};
   graph->edges[4] = (struct Edge){2, 3, 4};
 
-  int mst_weight = boruvkaMST(graph);
+  int mst_weight = serial_mst(graph);
 
   free_graph(graph);
 

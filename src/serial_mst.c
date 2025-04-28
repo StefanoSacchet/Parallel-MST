@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Boruvka's algorithm to find MST
-int boruvkaMST(struct Graph *graph) {
+// Serial Boruvka's algorithm to find MST
+int serial_mst(struct Graph *graph) {
   int V = graph->V, E = graph->E;
   struct Edge *edge = graph->edges;
   struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
@@ -43,10 +43,6 @@ int boruvkaMST(struct Graph *graph) {
       }
     }
 
-    for (int k = 0; k < V; k++) {
-      printf("cheapest[%d] = %d\n", k, cheapest[k]);
-    }
-
     // Consider the above picked cheapest edges and add them to MST
     for (int i = 0; i < V; i++) {
       // If cheapest for current set exists
@@ -69,4 +65,22 @@ int boruvkaMST(struct Graph *graph) {
   free(cheapest);
 
   return mst_weight;
+}
+
+// Run the serial version of Boruvka algorithm
+void run_serial_mst(char *argv[]) {
+  const char *file_name = argv[1];
+
+  Graph_t *graph = &(Graph_t){
+      .V = 0,
+      .E = 0,
+      .edges = NULL,
+  };
+
+  parse_graph_file(graph, file_name);
+
+  int mst_weight = serial_mst(graph);
+  printf("Total weight of MST: %d\n", mst_weight);
+
+  free_graph(graph);
 }

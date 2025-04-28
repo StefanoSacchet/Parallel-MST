@@ -191,6 +191,7 @@ void run_mpi_mst(int argc, char *argv[]) {
   double start_time = 0;
 
   if (rank == 0) {
+    printf("Running in MPI mode\n");
     parse_graph_file(graph, file_name);
     init_graph(mst, graph->V, graph->V - 1);
     start_time = MPI_Wtime();

@@ -212,14 +212,14 @@ void run_mpi_mst(int argc, char *argv[]) {
     double total_time = MPI_Wtime() - start_time;
     printf("Total time: %f\n", total_time);
 
-    unsigned long mst_weight = 0;
+    uint64_t mst_weight = 0;
     for (int i = 0; i < mst->E; i++) {
       mst_weight += mst->edges[i].weight;
     }
 
     printf("MST edges: %d\n", mst->E);
 
-    printf("Total weight of MST: %lu\n", mst_weight);
+    printf("Total weight of MST: %llu\n", mst_weight);
     // Log resutls to file
     log_result(file_name, size, total_time);
 

@@ -19,7 +19,8 @@ int serial_mst(struct Graph *graph) {
   }
 
   // At the beginning we have V trees
-  int num_trees = V, mst_weight = 0;
+  int num_trees = V;
+  uint64_t mst_weight = 0;
 
   // Keep combining components until we have only one tree
   while (num_trees > 1) {
@@ -79,8 +80,8 @@ void run_serial_mst(char *argv[]) {
 
   parse_graph_file(graph, file_name);
 
-  int mst_weight = serial_mst(graph);
-  printf("Total weight of MST: %d\n", mst_weight);
+  uint64_t mst_weight = serial_mst(graph);
+  printf("Total weight of MST: %llu\n", mst_weight);
 
   free_graph(graph);
 }

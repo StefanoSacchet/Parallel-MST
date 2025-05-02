@@ -20,7 +20,7 @@ cat <<EOF > "$job_script"
 #PBS -q short_cpuQ
 #PBS -N parallel_mst
 module load mpich-3.2
-mpirun.actual -n $num_processes ${PWD}/build/debug/bin/parallel_mst "$input_file"
+mpirun.actual -n $num_processes ${PWD}/build/bin/parallel_mst "$input_file"
 EOF
 
 qsub "$job_script"

@@ -66,13 +66,13 @@ check-formatting-deps:
 		exit 1; \
 	}
 
-# test: debug
-# 	@set -e; \
-# 	$(call setup_folder, build/debug) \
-#  	cmake ../.. -DCMAKE_BUILD_TYPE=Debug; \
-# 	make -j$(CORES) test_all; \
-# 	ctest --output-on-failure; \
-# 	cd -;
+test: debug
+	@set -e; \
+	$(call setup_folder, build) \
+ 	cmake .. -DCMAKE_BUILD_TYPE=Debug; \
+	make -j$(CORES) test_all; \
+	ctest --output-on-failure; \
+	cd -;
 
 # ONLY FOR HPC
 

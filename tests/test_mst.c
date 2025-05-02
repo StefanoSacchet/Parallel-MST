@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "mpi_mst.h"
 #include "serial_mst.h"
 
 void test_serial_mst(void) {
@@ -26,7 +27,23 @@ void test_serial_mst(void) {
   assert(mst_weight == 19);
 }
 
+void test_mpi_vs_serial(void) {
+  char *file_name = "small.txt";
+  uint64_t serial_tot_weight = run_serial_mst(1, &file_name);
+  uint64_t mpi_tot_weight = run_mpi_mst(1, &file_name);
+  assert(serial_tot_weight == mpi_tot_weight);
+}
+
+void test_mpi_vs_serial_2(void) {
+  char *file_name = "generated/tmp2.txt";
+  uint64_t serial_tot_weight = run_serial_mst(1, &file_name);
+  uint64_t mpi_tot_weight = run_mpi_mst(1, &file_name);
+  assert(serial_tot_weight == mpi_tot_weight);
+}
+
 int main(void) {
   test_serial_mst();
+  /*test_mpi_vs_serial();*/
+  test_mpi_vs_serial_2();
   return 0;
 }

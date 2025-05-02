@@ -168,8 +168,9 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
  *  @param argc Number of arguments
  *  @param argv Array of arguments
  */
-void run_mpi_mst(int argc, char *argv[]) {
-  const char *file_name = argv[1];
+uint64_t run_mpi_mst(int argc, char *argv[]) {
+  const char *file_name = argv[argc - 1];
+  uint64_t mst_weight = 0;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -212,7 +213,6 @@ void run_mpi_mst(int argc, char *argv[]) {
     double total_time = MPI_Wtime() - start_time;
     printf("Total time: %f\n", total_time);
 
-    uint64_t mst_weight = 0;
     for (int i = 0; i < mst->E; i++) {
       mst_weight += mst->edges[i].weight;
     }
@@ -230,4 +230,5 @@ void run_mpi_mst(int argc, char *argv[]) {
 
   free_mpi_edge_type(&MPI_EDGE_T);
   MPI_Finalize();
+  return mst_weight;
 }

@@ -17,7 +17,7 @@
 void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const int n_edges,
                        int *edges_per_core, int rank, int size);
 // Run MPI MST
-void run_mpi_mst(int argc, char *argv[]);
+uint64_t run_mpi_mst(int argc, char *argv[]);
 // Boruvka's algorithm with MPI
 void mpi_mst(struct Graph *graph, struct Graph *mst);
 

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "graph_parser.h"
+
 // Serial Boruvka's algorithm to find MST
 int serial_mst(struct Graph *graph) {
   int V = graph->V, E = graph->E;
@@ -69,8 +71,8 @@ int serial_mst(struct Graph *graph) {
 }
 
 // Run the serial version of Boruvka algorithm
-void run_serial_mst(char *argv[]) {
-  const char *file_name = argv[1];
+uint64_t run_serial_mst(int argc, char *argv[]) {
+  const char *file_name = argv[argc - 1];
 
   Graph_t *graph = &(Graph_t){
       .V = 0,
@@ -84,4 +86,5 @@ void run_serial_mst(char *argv[]) {
   printf("Total weight of MST: %llu\n", mst_weight);
 
   free_graph(graph);
+  return mst_weight;
 }

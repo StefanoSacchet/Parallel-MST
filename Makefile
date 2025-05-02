@@ -70,7 +70,7 @@ test: debug
 	@set -e; \
 	$(call setup_folder, build) \
  	cmake .. -DCMAKE_BUILD_TYPE=Debug; \
-	make -j$(CORES) test_all; \
+	make -j$(CORES); \
 	ctest --output-on-failure; \
 	cd -;
 

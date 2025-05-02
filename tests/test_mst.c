@@ -28,22 +28,36 @@ void test_serial_mst(void) {
 }
 
 void test_mpi_vs_serial(void) {
-  char *file_name = "small.txt";
-  uint64_t serial_tot_weight = run_serial_mst(1, &file_name);
-  uint64_t mpi_tot_weight = run_mpi_mst(1, &file_name);
+  char *fake_argv[] = {"program_name", "small.txt"};
+  uint64_t serial_tot_weight = run_serial_mst(2, fake_argv);
+  uint64_t mpi_tot_weight = run_mpi_mst(2, fake_argv);
   assert(serial_tot_weight == mpi_tot_weight);
 }
 
 void test_mpi_vs_serial_2(void) {
-  char *file_name = "generated/tmp2.txt";
-  uint64_t serial_tot_weight = run_serial_mst(1, &file_name);
-  uint64_t mpi_tot_weight = run_mpi_mst(1, &file_name);
+  char *fake_argv[] = {"program_name", "small2.txt"};
+  run_serial_mst(2, fake_argv);
+  uint64_t serial_tot_weight = run_serial_mst(2, fake_argv);
+  uint64_t mpi_tot_weight = run_mpi_mst(2, fake_argv);
   assert(serial_tot_weight == mpi_tot_weight);
 }
 
-int main(void) {
-  test_serial_mst();
-  /*test_mpi_vs_serial();*/
-  test_mpi_vs_serial_2();
-  return 0;
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    fprintf(stderr, "Please specify test name (e.g., test_serial_mst)\n");
+    return EXIT_FAILURE;
+  }
+
+  if (strcmp(argv[1], "test_serial_mst") == 0) {
+    test_serial_mst();
+  } else if (strcmp(argv[1], "test_mpi_vs_serial") == 0) {
+    test_mpi_vs_serial();
+  } else if (strcmp(argv[1], "test_mpi_vs_serial_2") == 0) {
+    test_mpi_vs_serial_2();
+  } else {
+    fprintf(stderr, "Unknown test name: %s\n", argv[1]);
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
 }

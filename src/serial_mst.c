@@ -56,8 +56,7 @@ uint64_t serial_mst(struct Graph *graph) {
         int set2 = find(subsets, edge.dest);
 
         if (set1 != set2) {
-          printf("Edge %d-%d with weight %d included in MST\n", edge.src,
-                 edge.dest, edge.weight);
+          printf("Edge %d-%d with weight %d included in MST\n", edge.src, edge.dest, edge.weight);
           mst_weight += edge.weight;
           edges_mst++;
           unionSets(subsets, set1, set2);
@@ -85,7 +84,7 @@ uint64_t run_serial_mst(int argc, char *argv[]) {
   parse_graph_file(graph, file_name);
 
   uint64_t mst_weight = serial_mst(graph);
-  printf("Total weight of MST: %lu\n", mst_weight);
+  printf("Total weight of MST: %llu\n", mst_weight);
 
   free_graph(graph);
   return mst_weight;

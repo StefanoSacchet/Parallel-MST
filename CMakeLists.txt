@@ -65,15 +65,14 @@ endif(OPENMP_FOUND)
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.c)
 
 # Define the executable
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} executables/main.c ${SOURCES})
+
 # Executable for graph generation
 add_executable(graph_generator executables/generate_graphs.c src/common.c src/tools/graph_generator.c)
-
-# Link MPI
 target_link_libraries(${PROJECT_NAME} MPI::MPI_C)
 
 # Enable Testing
 enable_testing()
-add_executable(test_all tests/test_mst.c src/serial_mst.c src/mpi/mpi_types.c src/mpi/mpi_mst.c src/tools/logger.c src/common.c src/tools/graph_parser.c)
+add_executable(test_all tests/test_mst.c ${SOURCES})
 target_link_libraries(test_all MPI::MPI_C)
 add_test(NAME MST_Test COMMAND test_all WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

@@ -1,4 +1,4 @@
-# Vertices 102 Edges 101
+# Vertices 105 Edges 101
 # FromNodeId ToNodeId Weight
 1 0 70
 3 0 15

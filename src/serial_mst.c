@@ -4,42 +4,43 @@
 #include <stdlib.h>
 
 // Serial Boruvka's algorithm to find MST
-int serial_mst(struct Graph *graph) {
+uint64_t serial_mst(struct Graph *graph) {
   int V = graph->V, E = graph->E;
   struct Edge *edge = graph->edges;
   struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
   // Cheapest outgoing edge for each component
-  int *cheapest = (int *)malloc(V * sizeof(int));
+  Edge_t *cheapest = (Edge_t *)malloc(V * sizeof(Edge_t));
 
   // Initialize subsets and cheapest array
   for (int v = 0; v < V; v++) {
     subsets[v].parent = v;
     subsets[v].rank = 0;
-    cheapest[v] = -1;
+    cheapest[v].weight = -1;
   }
 
   // At the beginning we have V trees
-  int num_trees = V;
+  int edges_mst = 0;
   uint64_t mst_weight = 0;
 
   // Keep combining components until we have only one tree
-  while (num_trees > 1) {
+  for (int i = 0; i < V && edges_mst < V - 1; i++) {
     // Initialize cheapest array
     for (int i = 0; i < V; i++) {
-      cheapest[i] = -1;
+      cheapest[i].weight = -1;
     }
 
     // Traverse through all edges and update cheapest of every component
     for (int i = 0; i < E; i++) {
-      int set1 = find(subsets, edge[i].src);
-      int set2 = find(subsets, edge[i].dest);
+      Edge_t current_edge = edge[i];
+      int set1 = find(subsets, current_edge.src);
+      int set2 = find(subsets, current_edge.dest);
 
       if (set1 != set2) {
-        if (cheapest[set1] == -1 || edge[cheapest[set1]].weight > edge[i].weight) {
-          cheapest[set1] = i;
+        if (cheapest[set1].weight == -1 || cheapest[set1].weight > current_edge.weight) {
+          cheapest[set1] = current_edge;
         }
-        if (cheapest[set2] == -1 || edge[cheapest[set2]].weight > edge[i].weight) {
-          cheapest[set2] = i;
+        if (cheapest[set2].weight == -1 || cheapest[set2].weight > current_edge.weight) {
+          cheapest[set2] = current_edge;
         }
       }
     }
@@ -47,16 +48,17 @@ int serial_mst(struct Graph *graph) {
     // Consider the above picked cheapest edges and add them to MST
     for (int i = 0; i < V; i++) {
       // If cheapest for current set exists
-      if (cheapest[i] != -1) {
-        int set1 = find(subsets, edge[cheapest[i]].src);
-        int set2 = find(subsets, edge[cheapest[i]].dest);
+      if (cheapest[i].weight != -1) {
+        Edge_t edge = cheapest[i];
+        int set1 = find(subsets, edge.src);
+        int set2 = find(subsets, edge.dest);
 
         if (set1 != set2) {
-          printf("Edge %d-%d with weight %d included in MST\n", edge[cheapest[i]].src,
-                 edge[cheapest[i]].dest, edge[cheapest[i]].weight);
-          mst_weight += edge[cheapest[i]].weight;
+          printf("Edge %d-%d with weight %d included in MST\n", edge.src,
+                 edge.dest, edge.weight);
+          mst_weight += edge.weight;
+          edges_mst++;
           unionSets(subsets, set1, set2);
-          num_trees--;
         }
       }
     }
@@ -81,7 +83,7 @@ void run_serial_mst(char *argv[]) {
   parse_graph_file(graph, file_name);
 
   uint64_t mst_weight = serial_mst(graph);
-  printf("Total weight of MST: %llu\n", mst_weight);
+  printf("Total weight of MST: %lu\n", mst_weight);
 
   free_graph(graph);
 }

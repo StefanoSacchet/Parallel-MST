@@ -152,8 +152,8 @@ void mpi_mst(struct Graph *graph, struct Graph *mst) {
             printf("Edge %d-%d with weight %d included in MST\n", edge.src, edge.dest, edge.weight);
           }
           edges_mst++;
+          unionSets(subsets, from, to);
         }
-        unionSets(subsets, from, to);
       }
     }
   }
@@ -219,7 +219,7 @@ uint64_t run_mpi_mst(int argc, char *argv[]) {
 
     printf("MST edges: %d\n", mst->E);
 
-    printf("Total weight of MST: %llu\n", mst_weight);
+    printf("Total weight of MST: %lu\n", mst_weight);
     // Log resutls to file
     log_result(file_name, size, total_time);
 

@@ -5,10 +5,12 @@
 
 #include "common.h"
 
+#include <stdint.h>
+
 /** @brief Boruvka's algorithm to find MST
  *  @param graph The input graph
  */
-int serial_mst(struct Graph *graph);
+uint64_t serial_mst(struct Graph *graph);
 
 /** @brief Run the serial version of Boruvka algorithm
  *  @param argv Array of arguments

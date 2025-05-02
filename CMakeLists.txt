@@ -75,4 +75,7 @@ target_link_libraries(${PROJECT_NAME} MPI::MPI_C)
 enable_testing()
 add_executable(test_all tests/test_mst.c ${SOURCES})
 target_link_libraries(test_all MPI::MPI_C)
-add_test(NAME MST_Test COMMAND test_all WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+add_test(NAME test_serial_mst COMMAND test_all test_serial_mst WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME test_mpi_vs_serial COMMAND test_all test_mpi_vs_serial WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+add_test(NAME test_mpi_vs_serial_2 COMMAND test_all test_mpi_vs_serial_2 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

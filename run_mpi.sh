@@ -10,5 +10,5 @@ fi
 num_processes="$1"
 input_file="$2"
 
-mpiexec -n "$num_processes" build/debug/bin/parallel_mst "$input_file"
+mpiexec -n "$num_processes" build/bin/parallel_mst "$input_file"
 

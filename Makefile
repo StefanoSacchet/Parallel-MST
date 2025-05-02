@@ -6,9 +6,9 @@ VALID_RUN_TYPES := SERIAL MPI
 
 $(info ==========================================)
 ifndef RUN_TYPE
-$(info [INFO] RUN_TYPE not set — using default: SERIAL)
+$(info [INFO] RUN_TYPE not set — using default: MPI)
 $(info [INFO] Available options: SERIAL | MPI)
-RUN_TYPE = SERIAL
+RUN_TYPE = MPI
 endif
 
 ifeq ($(filter $(RUN_TYPE), $(VALID_RUN_TYPES)),)
@@ -40,13 +40,13 @@ define exec_permission
 endef
 
 debug:
-	@$(call setup_folder, build/debug) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
+	@$(call setup_folder, build) \
+ 	cmake .. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 release:
-	@$(call setup_folder, build/release) \
-	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
+	@$(call setup_folder, build) \
+	cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=OFF -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 clean:
@@ -78,14 +78,14 @@ check-formatting-deps:
 
 hpc:
 	@$(call exec_permission)
-	@$(call setup_folder, build/debug) \
-	cmake ../.. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
+	@$(call setup_folder, build) \
+	cmake .. -DCMAKE_BUILD_TYPE=Debug -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 release-hpc:
 	@$(call exec_permission)
-	@$(call setup_folder, build/release) \
- 	cmake ../.. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
+	@$(call setup_folder, build) \
+ 	cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_HPC=ON -DRUN_TYPE=$(RUN_TYPE); \
 	make -j$(CORES);
 
 load:

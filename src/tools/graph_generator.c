@@ -77,7 +77,7 @@ void write_edges_to_file_or_stdout(const char *filename, Edge_t *edges, uint64_t
     }
   }
 
-  uint64_t max_vertex = 0;
+  int max_vertex = 0;
   for (uint64_t i = 0; i < num_edges; i++) {
     if (edges[i].src > max_vertex) {
       max_vertex = edges[i].src;
@@ -86,7 +86,7 @@ void write_edges_to_file_or_stdout(const char *filename, Edge_t *edges, uint64_t
       max_vertex = edges[i].dest;
     }
   }
-  fprintf(f, "%llu %llu\n", max_vertex + 1, num_edges);
+  fprintf(f, "%d %lu\n", max_vertex + 1, num_edges);
 
   for (uint64_t i = 0; i < num_edges; i++) {
     fprintf(f, "%d %d %d\n", edges[i].src, edges[i].dest, edges[i].weight);

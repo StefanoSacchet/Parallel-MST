@@ -215,7 +215,8 @@ tot_mst_weight_t run_mpi_mst(int argc, char *argv[]) {
   double start_time = 0;
 
   if (rank == 0) {
-    printf("Running in MPI mode\n");
+    if (DEBUG)
+      printf("Running in MPI mode\n");
     parse_graph_file(graph, file_name);
     init_graph(mst, graph->V, graph->V - 1);
     start_time = MPI_Wtime();
@@ -234,17 +235,24 @@ tot_mst_weight_t run_mpi_mst(int argc, char *argv[]) {
 
   if (rank == 0) {
     double total_time = MPI_Wtime() - start_time;
-    printf("Total time: %f\n", total_time);
+
+    if (HPC) {
+      printf("mpi %s %d %f\n", file_name, size, total_time);
+    }
 
     for (graph_size_t i = 0; i < mst->E; i++) {
       mst_weight += mst->edges[i].weight;
     }
 
-    printf("MST edges: %llu\n", mst->E);
-    printf("Total weight of MST: %llu\n", mst_weight);
+    if (!HPC) {
+      /*printf("MST edges: %llu\n", mst->E);*/
+      printf("Total time: %f\n", total_time);
+      printf("Total weight of MST: %llu\n", mst_weight);
+    }
 
     // Log resutls to file
-    log_result(file_name, size, total_time);
+    if (!HPC)
+      log_result("mpi", file_name, size, total_time);
 
     // Free graph memory
     free_graph(mst);

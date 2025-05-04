@@ -4,6 +4,14 @@
 #include <mpi.h>
 #include <stdint.h>
 
+#ifdef USE_HPC
+#define HPC 1
+#else
+#define HPC 0
+#endif
+
+#define DEBUG 0
+
 // CORRESPONDING DEFINES AND TYPEDEFS NEED TO BE THE SAME
 
 #define MPI_GRAPH_SIZE_T MPI_UINT64_T

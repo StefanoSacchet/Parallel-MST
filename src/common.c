@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-void init_graph(Graph_t *graph, int V, int E) {
+void init_graph(Graph_t *graph, graph_size_t V, graph_size_t E) {
   graph->V = V;
   graph->E = E;
   graph->edges = (struct Edge *)malloc(E * sizeof(struct Edge));
@@ -19,7 +19,7 @@ void free_graph(struct Graph *graph) {
  * @param subset The array of subsets
  * @param i The node for which we want the parent
  */
-int find(struct Subset subsets[], int i) {
+edge_t find(struct Subset subsets[], edge_t i) {
   if (subsets[i].parent != i) {
     subsets[i].parent = find(subsets, subsets[i].parent);
   }
@@ -27,9 +27,9 @@ int find(struct Subset subsets[], int i) {
 }
 
 // Union of two sets by rank
-void unionSets(struct Subset subsets[], int x, int y) {
-  int rootX = find(subsets, x);
-  int rootY = find(subsets, y);
+void unionSets(struct Subset subsets[], edge_t x, edge_t y) {
+  edge_t rootX = find(subsets, x);
+  edge_t rootY = find(subsets, y);
 
   // Attach smaller rank tree under root of high rank tree
   if (rootX != rootY) {

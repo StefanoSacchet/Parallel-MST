@@ -68,7 +68,7 @@ void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const graph_size_
   *edges_per_core = recv_count;
 }
 
-void mpi_mst(struct Graph *graph, struct Graph *mst) {
+void mpi_mst(Graph_t *graph, Graph_t *mst) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Status status;

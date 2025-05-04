@@ -14,11 +14,11 @@ void test_serial_mst(void) {
       .edges = NULL,
   };
   init_graph(graph, V, E);
-  graph->edges[0] = (struct Edge){0, 1, 10};
-  graph->edges[1] = (struct Edge){0, 2, 6};
-  graph->edges[2] = (struct Edge){0, 3, 5};
-  graph->edges[3] = (struct Edge){1, 3, 15};
-  graph->edges[4] = (struct Edge){2, 3, 4};
+  graph->edges[0] = (Edge_t){0, 1, 10};
+  graph->edges[1] = (Edge_t){0, 2, 6};
+  graph->edges[2] = (Edge_t){0, 3, 5};
+  graph->edges[3] = (Edge_t){1, 3, 15};
+  graph->edges[4] = (Edge_t){2, 3, 4};
 
   int mst_weight = serial_mst(graph);
 

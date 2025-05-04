@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "common.h"
+
 #define MAX_WEIGHT 1000
 #define PATH_SIZE 256
 
@@ -77,7 +79,7 @@ void write_edges_to_file_or_stdout(const char *filename, Edge_t *edges, uint64_t
     }
   }
 
-  int max_vertex = 0;
+  graph_size_t max_vertex = 0;
   for (uint64_t i = 0; i < num_edges; i++) {
     if (edges[i].src > max_vertex) {
       max_vertex = edges[i].src;
@@ -86,10 +88,10 @@ void write_edges_to_file_or_stdout(const char *filename, Edge_t *edges, uint64_t
       max_vertex = edges[i].dest;
     }
   }
-  fprintf(f, "%d %lu\n", max_vertex + 1, num_edges);
+  fprintf(f, "%llu %llu\n", max_vertex + 1, num_edges);
 
   for (uint64_t i = 0; i < num_edges; i++) {
-    fprintf(f, "%d %d %d\n", edges[i].src, edges[i].dest, edges[i].weight);
+    fprintf(f, "%llu %llu %lld\n", edges[i].src, edges[i].dest, edges[i].weight);
   }
 
   if (f != stdout) {

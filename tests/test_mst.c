@@ -35,7 +35,7 @@ void test_mpi_vs_serial(void) {
 }
 
 void test_mpi_vs_serial_2(void) {
-  char *fake_argv[] = {"program_name", "small2.txt"};
+  char *fake_argv[] = {"program_name", "generated/tmp2.txt"};
   run_serial_mst(2, fake_argv);
   uint64_t serial_tot_weight = run_serial_mst(2, fake_argv);
   uint64_t mpi_tot_weight = run_mpi_mst(2, fake_argv);

@@ -35,16 +35,16 @@ typedef struct Subset {
 // Initialize `graph` with `V` vertices and `E` edges
 void init_graph(Graph_t *graph, graph_size_t V, graph_size_t E);
 // Deallocate the graph
-void free_graph(struct Graph *graph);
+void free_graph(Graph_t *graph);
 
 /** @brief Find parent of an element i (uses path compression)
  *
  * @param subset The array of subsets
  * @param i The node for which we want the parent
  */
-edge_t find(struct Subset subsets[], edge_t i);
+edge_t find(Subset_t subsets[], edge_t i);
 
 // Union of two sets by rank
-void unionSets(struct Subset subsets[], edge_t x, edge_t y);
+void unionSets(Subset_t subsets[], edge_t x, edge_t y);
 
 #endif  // COMMON_H

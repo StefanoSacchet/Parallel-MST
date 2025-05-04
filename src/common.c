@@ -5,10 +5,10 @@
 void init_graph(Graph_t *graph, graph_size_t V, graph_size_t E) {
   graph->V = V;
   graph->E = E;
-  graph->edges = (struct Edge *)malloc(E * sizeof(struct Edge));
+  graph->edges = (Edge_t *)malloc(E * sizeof(Edge_t));
 }
 
-void free_graph(struct Graph *graph) {
+void free_graph(Graph_t *graph) {
   if (graph) {
     free(graph->edges);
   }
@@ -19,7 +19,7 @@ void free_graph(struct Graph *graph) {
  * @param subset The array of subsets
  * @param i The node for which we want the parent
  */
-edge_t find(struct Subset subsets[], edge_t i) {
+edge_t find(Subset_t subsets[], edge_t i) {
   if (subsets[i].parent != i) {
     subsets[i].parent = find(subsets, subsets[i].parent);
   }
@@ -27,7 +27,7 @@ edge_t find(struct Subset subsets[], edge_t i) {
 }
 
 // Union of two sets by rank
-void unionSets(struct Subset subsets[], edge_t x, edge_t y) {
+void unionSets(Subset_t subsets[], edge_t x, edge_t y) {
   edge_t rootX = find(subsets, x);
   edge_t rootY = find(subsets, y);
 

@@ -3,7 +3,7 @@
 #include "mpi_mst.h"
 
 #if !defined(SERIAL) && !defined(MPI)
-#define SERIAL
+#define MPI
 #endif
 
 int main(int argc, char *argv[]) {

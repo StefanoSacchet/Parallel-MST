@@ -86,7 +86,7 @@ tot_mst_weight_t run_serial_mst(int argc, char *argv[]) {
   parse_graph_file(graph, file_name);
 
   tot_mst_weight_t mst_weight = serial_mst(graph);
-  printf("Total weight of MST: %llu\n", mst_weight);
+  printf("Total weight of MST: %lu\n", mst_weight);
 
   free_graph(graph);
   return mst_weight;

@@ -247,7 +247,7 @@ tot_mst_weight_t run_mpi_mst(int argc, char *argv[]) {
     if (!HPC) {
       /*printf("MST edges: %llu\n", mst->E);*/
       printf("Total time: %f\n", total_time);
-      printf("Total weight of MST: %llu\n", mst_weight);
+      printf("Total weight of MST: %lu\n", mst_weight);
     }
 
     // Log resutls to file

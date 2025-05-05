@@ -88,10 +88,10 @@ void write_edges_to_file_or_stdout(const char *filename, Edge_t *edges, uint64_t
       max_vertex = edges[i].dest;
     }
   }
-  fprintf(f, "%lu %lu\n", max_vertex + 1, num_edges);
+  fprintf(f, "%" PRIu64 " %" PRIu64 "\n", max_vertex + 1, num_edges);
 
   for (uint64_t i = 0; i < num_edges; i++) {
-    fprintf(f, "%lu %lu %ld\n", edges[i].src, edges[i].dest, edges[i].weight);
+    fprintf(f, "%" PRIu64 " %" PRIu64 " %" PRIu64 "\n", edges[i].src, edges[i].dest, edges[i].weight);
   }
 
   if (f != stdout) {

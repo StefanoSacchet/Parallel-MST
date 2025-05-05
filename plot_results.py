@@ -1,4 +1,6 @@
+import glob
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,19 +12,48 @@ PLOT_FILE = "combined_plot.png"
 
 
 def plot_results():
-    # Read the log file
     df = pd.read_csv(LOG_PATH, sep=r"\s+")
+    _plot_dataframe(df)
 
-    # Group by file_name and num_processes, and average the Time
-    avg_df = df.groupby(["file_name", "num_processes"], as_index=False).mean()
 
-    # Ensure plot directory exists
+def plot_from_output_files():
+    files = glob.glob("parallel_mst.o*")
+    rows = []
+
+    for file in files:
+        print(f"Processing file: {file}")
+        with open(file, "r") as f:
+            line = f.readline().strip()
+            if line:
+                parts = line.split()
+                if len(parts) == 4:
+                    algo, file_name, num_processes, time = parts
+                    rows.append(
+                        {
+                            "algorithm": algo,
+                            "file_name": file_name,
+                            "num_processes": int(num_processes),
+                            "Time": float(time),
+                        }
+                    )
+
+    if not rows:
+        print("No valid data found in output files.")
+        return
+
+    df = pd.DataFrame(rows)
+    _plot_dataframe(df)
+
+
+def _plot_dataframe(df: pd.DataFrame):
     os.makedirs(PLOT_DIR, exist_ok=True)
 
-    # Set seaborn style
+    # Only average numeric column (Time)
+    avg_df = df.groupby(["file_name", "num_processes"], as_index=False)["Time"].mean()
+
     sns.set(style="whitegrid")
 
-    # ----- Combined Plot -----
+    # Combined plot
     plt.figure(figsize=(10, 6))
     sns.lineplot(data=avg_df, x="num_processes", y="Time", hue="file_name", marker="o")
     plt.title("Performance Comparison by Input File")
@@ -33,7 +64,7 @@ def plot_results():
     plt.savefig(os.path.join(PLOT_DIR, PLOT_FILE))
     plt.close()
 
-    # ----- Individual Plots -----
+    # Individual plots
     for file_name in avg_df["file_name"].unique():
         subset = avg_df[avg_df["file_name"] == file_name]
         plt.figure(figsize=(8, 5))
@@ -48,5 +79,10 @@ def plot_results():
 
 
 if __name__ == "__main__":
-    plot_results()
+    if len(sys.argv) > 1 and sys.argv[1] == "--hpc":
+        plot_from_output_files()
+    else:
+        plot_results()
+
     print(f"Plots saved in '{PLOT_DIR}'")
+    print(f"Combined plot saved as '{PLOT_FILE}'")

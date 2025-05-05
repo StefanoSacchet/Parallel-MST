@@ -15,19 +15,18 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   snprintf(path, sizeof(path), "%s/%s", DATASET_DIR, filename);
   FILE *file = fopen(path, "r");
   if (!file) {
-    fprintf(stderr, "Error opening graph file: %s | PWD: %s\n", path,
-            getcwd(NULL, 0));
+    fprintf(stderr, "Error opening graph file: %s | PWD: %s\n", path, getcwd(NULL, 0));
     exit(EXIT_FAILURE);
   }
 
   char line[MAX_LINE_LENGTH];
-  int edge_index = 0;
+  edge_t edge_index = 0;
 
   // Skip comments and read the first data line (should be: <V> <E>)
   while (fgets(line, sizeof(line), file)) {
     if (line[0] != '#') {
-      int V, E;
-      if (sscanf(line, "%d %d", &V, &E) != 2) {
+      graph_size_t V, E;
+      if (sscanf(line, "%llu %llu", &V, &E) != 2) {
         fprintf(stderr, "Invalid graph header format (expected '<V> <E>')\n");
         fclose(file);
         exit(EXIT_FAILURE);
@@ -48,10 +47,12 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
 
   // Read the edges (skip comments, parse lines like: "0 1 32")
   while (fgets(line, sizeof(line), file)) {
-    if (line[0] == '#') continue;
+    if (line[0] == '#')
+      continue;
 
-    int src, dest, weight;
-    if (sscanf(line, "%d %d %d", &src, &dest, &weight) == 3) {
+    edge_t src, dest;
+    edge_weight_t weight;
+    if (sscanf(line, "%llu %llu %lld", &src, &dest, &weight) == 3) {
       if (edge_index >= graph->E) {
         fprintf(stderr, "More edges than declared in header\n");
         fclose(file);
@@ -63,8 +64,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   }
 
   if (edge_index != graph->E) {
-    fprintf(stderr, "Edge count mismatch: expected %d, got %d\n", graph->E,
-            edge_index);
+    fprintf(stderr, "Edge count mismatch: expected %llu, got %llu\n", graph->E, edge_index);
     fclose(file);
     exit(EXIT_FAILURE);
   }

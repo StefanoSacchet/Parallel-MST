@@ -10,7 +10,7 @@
 
 // Log `input_file`, `num_processes`, `total_time` of the MST algorithm to
 // `LOG_PATH` file.
-void log_result(const char *file_name, int num_processes, double time) {
+void log_result(const char *type, const char *file_name, int num_processes, double time) {
   // Create the directory if it does not exist
   if (access(LOG_DIR, F_OK) == -1) {
     // 0755: rwx-rx
@@ -27,7 +27,7 @@ void log_result(const char *file_name, int num_processes, double time) {
       fprintf(stderr, "Error creating log file %s\n", LOG_PATH);
       exit(EXIT_FAILURE);
     }
-    fprintf(fp, "file_name num_processes Time\n");
+    fprintf(fp, "type file_name num_processes Time\n");
     fclose(fp);
   }
 
@@ -38,6 +38,6 @@ void log_result(const char *file_name, int num_processes, double time) {
     exit(EXIT_FAILURE);
   }
 
-  fprintf(fp, "%s %d %f\n", file_name, num_processes, time);
+  fprintf(fp, "%s %s %d %f\n", type, file_name, num_processes, time);
   fclose(fp);
 }

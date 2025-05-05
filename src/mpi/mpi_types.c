@@ -6,7 +6,7 @@
 void create_mpi_edge_type(MPI_Datatype *mpi_edge_t) {
   int blocklengths[3] = {1, 1, 1};
   MPI_Aint offsets[3];
-  MPI_Datatype oldtypes[3] = {MPI_INT, MPI_INT, MPI_INT};
+  MPI_Datatype oldtypes[3] = {MPI_EDGE_SIZE_T, MPI_EDGE_SIZE_T, MPI_EDGE_WEIGHT_T};
 
   offsets[0] = offsetof(Edge_t, src);
   offsets[1] = offsetof(Edge_t, dest);

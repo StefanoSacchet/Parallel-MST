@@ -52,7 +52,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
 
     edge_t src, dest;
     edge_weight_t weight;
-    if (sscanf(line, "%" PRIu64 " %" PRIu64 " %ld", &src, &dest, &weight) == 3) {
+    if (sscanf(line, "%" PRIu64 " %" PRIu64 " %" PRId64, &src, &dest, &weight) == 3) {
       if (edge_index >= graph->E) {
         fprintf(stderr, "More edges than declared in header\n");
         fclose(file);
@@ -64,7 +64,8 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   }
 
   if (edge_index != graph->E) {
-    fprintf(stderr, "Edge count mismatch: expected %" PRIu64 ", got %" PRIu64 "\n", graph->E, edge_index);
+    fprintf(stderr, "Edge count mismatch: expected %" PRIu64 ", got %" PRIu64 "\n", graph->E,
+            edge_index);
     fclose(file);
     exit(EXIT_FAILURE);
   }

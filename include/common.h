@@ -3,6 +3,7 @@
 
 #include <mpi.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifdef USE_HPC
 #define HPC 1

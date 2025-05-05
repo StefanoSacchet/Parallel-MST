@@ -26,7 +26,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   while (fgets(line, sizeof(line), file)) {
     if (line[0] != '#') {
       graph_size_t V, E;
-      if (sscanf(line, "%lu %lu", &V, &E) != 2) {
+      if (sscanf(line, "%" PRIu64 " %" PRIu64, &V, &E) != 2) {
         fprintf(stderr, "Invalid graph header format (expected '<V> <E>')\n");
         fclose(file);
         exit(EXIT_FAILURE);
@@ -52,7 +52,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
 
     edge_t src, dest;
     edge_weight_t weight;
-    if (sscanf(line, "%lu %lu %ld", &src, &dest, &weight) == 3) {
+    if (sscanf(line, "%" PRIu64 " %" PRIu64 " %ld", &src, &dest, &weight) == 3) {
       if (edge_index >= graph->E) {
         fprintf(stderr, "More edges than declared in header\n");
         fclose(file);
@@ -64,7 +64,7 @@ void parse_graph_file(Graph_t *graph, const char *filename) {
   }
 
   if (edge_index != graph->E) {
-    fprintf(stderr, "Edge count mismatch: expected %lu, got %lu\n", graph->E, edge_index);
+    fprintf(stderr, "Edge count mismatch: expected %" PRIu64 ", got %" PRIu64 "\n", graph->E, edge_index);
     fclose(file);
     exit(EXIT_FAILURE);
   }

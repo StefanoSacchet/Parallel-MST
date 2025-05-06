@@ -8,14 +8,14 @@ fi
 
 input_file="$1"
 
-for ((p=2; p<=128; p*=2)); do
+for ((p=2; p<=64; p*=2)); do
     # Create a temporary PBS script
     job_script=$(mktemp)
 
     cat <<EOF > "$job_script"
 #!/bin/bash
-#PBS -l select=1:ncpus=$p:mem=2gb
-#PBS -l walltime=00:01:00
+#PBS -l select=1:ncpus=$p:mem=8gb
+#PBS -l walltime=00:05:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst_${p}
 #PBS -o logs/parallel_mst.o${p}

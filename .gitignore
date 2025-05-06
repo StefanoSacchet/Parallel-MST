@@ -62,3 +62,4 @@ dataset/generated/
 
 # Python venv
 .hpc
+*.zip

@@ -68,123 +68,153 @@ void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const graph_size_
   *edges_per_core = recv_count;
 }
 
+// Define the custom reduction function for finding minimum weight edges
+void min_weight_edge_op(void *in, void *inout, int *len, MPI_Datatype *datatype) {
+  Edge_t *in_edges = (Edge_t *)in;
+  Edge_t *inout_edges = (Edge_t *)inout;
+  
+  for (int i = 0; i < *len; i++) {
+    // If input edge has invalid weight (-1), keep the output edge
+    if (in_edges[i].weight == -1) 
+      continue;
+    
+    // If output edge has invalid weight (-1), use input edge
+    if (inout_edges[i].weight == -1) {
+      inout_edges[i] = in_edges[i];
+      continue;
+    }
+    
+    // Otherwise use the edge with minimum weight
+    if (in_edges[i].weight < inout_edges[i].weight) {
+      inout_edges[i] = in_edges[i];
+    }
+  }
+}
+
 void mpi_mst(Graph_t *graph, Graph_t *mst) {
+  int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Status status;
-
+  
+  // Create custom MPI reduction operation for minimum weight edge
+  MPI_Op min_weight_edge_op_handle;
+  MPI_Op_create(min_weight_edge_op, 1, &min_weight_edge_op_handle);
+  
   // Send number of edges and vertices
-  graph_size_t n_edges;
-  graph_size_t n_vertices;
+  graph_size_t n_edges = 0;
+  graph_size_t n_vertices = 0;
   if (rank == 0) {
     n_edges = graph->E;
     n_vertices = graph->V;
   }
-
   MPI_Bcast(&n_edges, 1, MPI_GRAPH_SIZE_T, 0, MPI_COMM_WORLD);
   MPI_Bcast(&n_vertices, 1, MPI_GRAPH_SIZE_T, 0, MPI_COMM_WORLD);
-
+  
   // Scatter the edges to search in them
   graph_size_t edges_per_core = 0;
   Edge_t *edges_part = NULL;
   scatter_edge_list(graph->edges, &edges_part, n_edges, &edges_per_core, rank, size);
-
-  // Init set
+  
+  // Initialize disjoint set
   Subset_t *subsets = (Subset_t *)malloc(n_vertices * sizeof(Subset_t));
   if (subsets == NULL) {
     fprintf(stderr, "Failed to allocate memory for subsets\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
-
+  
+  // Allocate for MST result on rank 0
+  if (rank == 0 && mst != NULL) {
+    mst->V = n_vertices;
+    mst->E = 0;  // Will be updated as edges are added
+    mst->edges = (Edge_t *)realloc(mst->edges, (n_vertices - 1) * sizeof(Edge_t));
+    if (mst->edges == NULL) {
+      fprintf(stderr, "Failed to allocate memory for MST edges\n");
+      MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+  }
+  
   graph_size_t edges_mst = 0;
-
+  
   // Cheapest outgoing edge for each component
   Edge_t *cheapest = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-  Edge_t *cheapest_edge_received = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-  if (cheapest == NULL || cheapest_edge_received == NULL) {
+  Edge_t *global_cheapest = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
+  if (cheapest == NULL || global_cheapest == NULL) {
     fprintf(stderr, "Failed to allocate memory for cheapest edges\n");
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
-
+  
   // Initialize subsets and cheapest array
   for (graph_size_t v = 0; v < n_vertices; v++) {
     subsets[v].parent = v;
     subsets[v].rank = 0;
-    cheapest[v].weight = -1;
   }
 
-  for (graph_size_t i = 0; i < n_vertices && edges_mst < n_vertices - 1; i++) {
+  // Main MST loop - will run at most V-1 times
+  while (edges_mst < n_vertices - 1) {
     // Reset cheapest edges array
     for (graph_size_t j = 0; j < n_vertices; j++) {
       cheapest[j].weight = -1;
+      global_cheapest[j].weight = -1;
     }
-
-    // Traverse through all edges and update cheapest of every component
+    
+    // Find the cheapest outgoing edge for each component in local partition
     for (graph_size_t j = 0; j < edges_per_core; j++) {
       Edge_t current_edge = edges_part[j];
       graph_size_t set1 = find(subsets, current_edge.src);
       graph_size_t set2 = find(subsets, current_edge.dest);
-
+      
       if (set1 != set2) {
-        if (cheapest[set1].weight == -1 || cheapest[set1].weight > current_edge.weight) {
+        if (cheapest[set1].weight == -1 || current_edge.weight < cheapest[set1].weight) {
           cheapest[set1] = current_edge;
         }
-        if (cheapest[set2].weight == -1 || cheapest[set2].weight > current_edge.weight) {
+        if (cheapest[set2].weight == -1 || current_edge.weight < cheapest[set2].weight) {
           cheapest[set2] = current_edge;
         }
       }
     }
-
-    int from, to;
-    for (int step = 1; step < size; step *= 2) {
-      if (rank % (2 * step) == 0) {
-        from = rank + step;
-        if (from < size) {
-          assert(n_vertices <= INT_MAX);
-          MPI_Recv(cheapest_edge_received, (int)n_vertices, MPI_EDGE_T, from, 0, MPI_COMM_WORLD,
-                   &status);
-
-          for (graph_size_t j = 0; j < n_vertices; j++) {
-            if (cheapest_edge_received[j].weight != -1 &&
-                (cheapest[j].weight == -1 ||
-                 cheapest_edge_received[j].weight < cheapest[j].weight)) {
-              cheapest[j] = cheapest_edge_received[j];
-            }
-          }
-        }
-      } else if (rank % step == 0) {
-        to = rank - step;
-        assert(n_vertices <= INT_MAX);
-        MPI_Send(cheapest, (int)n_vertices, MPI_EDGE_T, to, 0, MPI_COMM_WORLD);
-      }
-    }
-
-    assert(n_vertices <= INT_MAX);
-    MPI_Bcast(cheapest, (int)n_vertices, MPI_EDGE_T, 0, MPI_COMM_WORLD);
-
-    // Add new edges to MST
+    
+    // Combine cheapest edges from all processes using our custom reduction
+    MPI_Allreduce(cheapest, global_cheapest, n_vertices, MPI_EDGE_T, min_weight_edge_op_handle, 
+                  MPI_COMM_WORLD);
+    
+    // Add new edges to MST (all processes update their disjoint sets)
+    int new_edges_added = 0;
     for (graph_size_t j = 0; j < n_vertices; j++) {
-      if (cheapest[j].weight != -1) {
-        Edge_t edge = cheapest[j];
-
-        graph_size_t from = find(subsets, edge.src);
-        graph_size_t to = find(subsets, edge.dest);
-
-        if (from != to) {
-          if (rank == 0) {
+      if (global_cheapest[j].weight != -1) {
+        Edge_t edge = global_cheapest[j];
+        graph_size_t set1 = find(subsets, edge.src);
+        graph_size_t set2 = find(subsets, edge.dest);
+        
+        if (set1 != set2) {
+          // Add edge to MST on rank 0
+          if (rank == 0 && mst != NULL) {
             mst->edges[edges_mst] = edge;
+            mst->E++;
           }
           edges_mst++;
-          unionSets(subsets, from, to);
+          new_edges_added++;
+          unionSets(subsets, set1, set2);
         }
       }
     }
+    
+    // Early termination check - if no new edges were added, we're done
+    int global_new_edges;
+    MPI_Allreduce(&new_edges_added, &global_new_edges, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if (global_new_edges == 0) {
+      break;
+    }
   }
-
+  
+  // Free the custom reduction operation
+  MPI_Op_free(&min_weight_edge_op_handle);
+  
+  // Cleanup
   free(edges_part);
   free(subsets);
   free(cheapest);
-  free(cheapest_edge_received);
+  free(global_cheapest);
 }
 
 /** @brief Run the parallel version of Boruvka algorithm using MPI

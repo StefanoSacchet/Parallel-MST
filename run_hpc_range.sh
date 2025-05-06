@@ -8,6 +8,8 @@ fi
 
 input_file="$1"
 
+mkdir -p logs/
+
 for ((p=2; p<=64; p*=2)); do
     # Create a temporary PBS script
     job_script=$(mktemp)

@@ -17,7 +17,7 @@ def plot_results():
 
 
 def plot_from_output_files():
-    files = glob.glob("parallel_mst.o*")
+    files = glob.glob("logs/parallel_mst.o*")
     rows = []
 
     for file in files:

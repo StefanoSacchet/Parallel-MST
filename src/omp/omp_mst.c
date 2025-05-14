@@ -1,6 +1,7 @@
 #include "omp_mst.h"
 
 #include <omp.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "logger.h"

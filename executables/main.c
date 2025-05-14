@@ -1,10 +1,8 @@
 #include <stdlib.h>
 
 #include "mpi_mst.h"
-
-#if !defined(SERIAL) && !defined(MPI)
-#define MPI
-#endif
+#include "omp_mst.h"
+#include "serial_mst.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -17,6 +15,9 @@ int main(int argc, char *argv[]) {
   run_serial_mst(argc, argv);
 #elif defined(MPI)
   run_mpi_mst(argc, argv);
+#elif defined(OMP)
+  printf("Running in OMP mode\n");
+  run_omp_mst(argc, argv);
 #else
 #error "Invalid RUN_TYPE: must be SERIAL or MPI"
 #endif

@@ -29,6 +29,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
   }
 
   // Initialize subsets and cheapest array
+#pragma omp simd
   for (graph_size_t v = 0; v < n_vertices; v++) {
     subsets[v].parent = v;
     subsets[v].rank = 0;
@@ -36,23 +37,28 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
   }
 
   while (edges_mst < n_vertices - 1) {
+#pragma omp simd
     // Reset cheapest edges array
     for (graph_size_t j = 0; j < n_vertices; j++) {
       cheapest[j].weight = -1;
     }
 
-    // Traverse through all edges and update cheapest of every component
+// Traverse through all edges and update cheapest of every component
+#pragma omp parallel for schedule(auto)
     for (graph_size_t j = 0; j < n_edges; j++) {
       Edge_t current_edge = edges[j];
       graph_size_t set1 = find(subsets, current_edge.src);
       graph_size_t set2 = find(subsets, current_edge.dest);
 
       if (set1 != set2) {
-        if (cheapest[set1].weight == -1 || cheapest[set1].weight > current_edge.weight) {
-          cheapest[set1] = current_edge;
-        }
-        if (cheapest[set2].weight == -1 || cheapest[set2].weight > current_edge.weight) {
-          cheapest[set2] = current_edge;
+#pragma omp critical
+        {
+          if (cheapest[set1].weight == -1 || cheapest[set1].weight > current_edge.weight) {
+            cheapest[set1] = current_edge;
+          }
+          if (cheapest[set2].weight == -1 || cheapest[set2].weight > current_edge.weight) {
+            cheapest[set2] = current_edge;
+          }
         }
       }
     }
@@ -79,6 +85,8 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
 }
 
 tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
+  omp_set_num_threads(4);
+
   const char *file_name = argv[argc - 1];
   tot_mst_weight_t mst_weight = 0;
 
@@ -110,7 +118,7 @@ tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
   if (!HPC) {
     printf("Total time: %f\n", total_time);
     printf("Total weight of MST: %" PRIu64 "\n", mst_weight);
-    log_result("seq", file_name, 1, total_time);
+    log_result("omp", file_name, 1, total_time);
   }
 
   free_graph(mst);

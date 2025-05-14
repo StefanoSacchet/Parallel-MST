@@ -1,10 +1,12 @@
 #include "serial_mst.h"
 
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "common.h"
 #include "graph_parser.h"
+#include "omp_mst.h"
 
 // Serial Boruvka's algorithm to find MST
 tot_mst_weight_t serial_mst(struct Graph *graph) {
@@ -85,8 +87,14 @@ tot_mst_weight_t run_serial_mst(int argc, char *argv[]) {
 
   parse_graph_file(graph, file_name);
 
+  double start_time = omp_get_wtime();
   tot_mst_weight_t mst_weight = serial_mst(graph);
-  printf("Total weight of MST:%" PRIu64 "\n", mst_weight);
+  double total_time = omp_get_wtime() - start_time;
+
+  if (!HPC) {
+    printf("Total time: %f\n", total_time);
+    printf("Total weight of MST:%" PRIu64 "\n", mst_weight);
+  }
 
   free_graph(graph);
   return mst_weight;

@@ -7,8 +7,12 @@ if [ $# -lt 1 ]; then
 fi
 
 input_file="$1"
-
 mkdir -p logs/
+
+source load_modules.sh
+echo "Building release OMP..."
+make clean
+make release-hpc RUN_TYPE=OMP
 
 generate_and_submit_pbs_script() {
     local select_nodes="$1"

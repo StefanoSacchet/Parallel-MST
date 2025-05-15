@@ -9,6 +9,11 @@ fi
 input_file="$1"
 mkdir -p logs/
 
+source load_modules.sh
+echo "Building release MPI..."
+make clean
+make release-hpc RUN_TYPE=MPI
+
 generate_and_submit_pbs_script() {
     local select_nodes="$1"
     local ncpus="$2"

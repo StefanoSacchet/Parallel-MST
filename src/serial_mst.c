@@ -95,6 +95,10 @@ tot_mst_weight_t run_serial_mst(int argc, char *argv[]) {
   tot_mst_weight_t mst_weight = serial_mst(graph);
   double total_time = omp_get_wtime() - start_time;
 
+  if (HPC) {
+    printf("serial %s %d %f\n", file_name, 1, total_time);
+  }
+
   if (!HPC) {
     printf("Total time: %f\n", total_time);
     printf("Total weight of MST:%" PRIu64 "\n", mst_weight);

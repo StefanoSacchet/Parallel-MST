@@ -10,20 +10,20 @@ input_file="$1"
 
 mkdir -p logs/
 
-for ((p=2; p<=128; p*=2)); do
+for ((p=2; p<=64; p*=2)); do
     # Create a temporary PBS script
     job_script=$(mktemp)
 
     cat <<EOF > "$job_script"
 #!/bin/bash
-#PBS -l select=1:ncpus=$p:mem=16gb
+#PBS -l select=1:ncpus=$p:mem=32gb
 #PBS -l walltime=00:10:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst_${p}
-#PBS -o logs/parallel_mst.o${p}
-#PBS -e logs/parallel_mst.e${p}
+#PBS -o logs/omp_parallel_mst.o${p}
+#PBS -e logs/omp_parallel_mst.e${p}
 
-./${PWD}/build/bin/parallel_mst "$input_file"
+${PWD}/build/bin/parallel_mst "$input_file"
 EOF
 
     echo "Submitting job with $p processes..."

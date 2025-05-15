@@ -23,8 +23,8 @@ cat <<EOF > "$job_script"
 #PBS -l walltime=00:15:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst
-#PBS -o logs/mpi_parallel_mst.o1
-#PBS -e logs/mpi_parallel_mst.e1
+#PBS -o logs/serial_parallel_mst.o1
+#PBS -e logs/serial_parallel_mst.e1
 ${PWD}/build/bin/parallel_mst "$input_file"
 EOF
 

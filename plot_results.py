@@ -16,7 +16,30 @@ def plot_results():
     _plot_dataframe(df)
 
 
+def read_base_time(serial_file):
+    try:
+        with open(serial_file, "r") as f:
+            line = f.readline().strip()
+            if line:
+                parts = line.split()
+                if len(parts) == 4:
+                    _, _, _, time = parts
+                    return float(time)
+    except FileNotFoundError:
+        print(f"Error: Base serial file '{serial_file}' not found.")
+    except Exception as e:
+        print(f"Error reading base time: {e}")
+    return None
+
+
 def plot_from_output_files(log_dir):
+    serial_file = os.path.join(log_dir, "serial_parallel_mst.o1")
+    T1 = read_base_time(serial_file)
+
+    if T1 is None:
+        print("Cannot calculate speedup/efficiency: base time not available.")
+        return
+
     patterns = [
         ("mpi", os.path.join(log_dir, "mpi_parallel_mst.o*")),
         ("omp", os.path.join(log_dir, "omp_parallel_mst.o*")),
@@ -34,13 +57,19 @@ def plot_from_output_files(log_dir):
                     parts = line.split()
                     if len(parts) == 4:
                         algo, file_name, num_processes, time = parts
+                        time = float(time)
+                        num_processes = int(num_processes)
+                        speedup = T1 / time
+                        efficiency = speedup / num_processes
                         rows.append(
                             {
                                 "implementation": impl_type,
                                 "algorithm": algo,
                                 "file_name": file_name,
-                                "num_processes": int(num_processes),
-                                "Time": float(time),
+                                "num_processes": num_processes,
+                                "Time": time,
+                                "Speedup": speedup,
+                                "Efficiency": efficiency,
                             }
                         )
 
@@ -55,15 +84,12 @@ def plot_from_output_files(log_dir):
 def _plot_dataframe(df: pd.DataFrame, log_dir: str):
     os.makedirs(os.path.join(log_dir, "plots"), exist_ok=True)
 
-    avg_df = df.groupby(
-        ["implementation", "file_name", "num_processes"], as_index=False
-    )["Time"].mean()
-
     sns.set(style="whitegrid")
 
+    # Plot: Time
     plt.figure(figsize=(12, 7))
     sns.lineplot(
-        data=avg_df,
+        data=df,
         x="num_processes",
         y="Time",
         hue="file_name",
@@ -81,16 +107,44 @@ def _plot_dataframe(df: pd.DataFrame, log_dir: str):
     plt.savefig(os.path.join(log_dir, "plots", PLOT_FILE))
     plt.close()
 
-    for (impl, file_name), subset in avg_df.groupby(["implementation", "file_name"]):
-        plt.figure(figsize=(8, 5))
-        sns.lineplot(data=subset, x="num_processes", y="Time", marker="o")
-        plt.title(f"Performance for {file_name} [{impl.upper()}]")
-        plt.xlabel("Number of Processes")
-        plt.ylabel("Time (s)")
-        plt.tight_layout()
-        sanitized_name = os.path.basename(file_name).replace("/", "__")
-        plt.savefig(os.path.join(log_dir, "plots", f"{impl}_{sanitized_name}.png"))
-        plt.close()
+    # Plot: Speedup
+    plt.figure(figsize=(12, 7))
+    sns.lineplot(
+        data=df,
+        x="num_processes",
+        y="Speedup",
+        hue="file_name",
+        style="implementation",
+        markers=True,
+        dashes=False,
+    )
+    plt.title("Speedup by Input File and Implementation")
+    plt.xlabel("Number of Processes")
+    plt.ylabel("Speedup")
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, "plots", "speedup_plot.png"))
+    plt.close()
+
+    # Plot: Efficiency
+    plt.figure(figsize=(12, 7))
+    sns.lineplot(
+        data=df,
+        x="num_processes",
+        y="Efficiency",
+        hue="file_name",
+        style="implementation",
+        markers=True,
+        dashes=False,
+    )
+    plt.title("Efficiency by Input File and Implementation")
+    plt.xlabel("Number of Processes")
+    plt.ylabel("Efficiency")
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, "plots", "efficiency_plot.png"))
+    plt.close()
+
+    # Save CSV
+    df.to_csv(os.path.join(log_dir, "plots", "performance_metrics.csv"), index=False)
 
 
 if __name__ == "__main__":

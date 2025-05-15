@@ -10,22 +10,33 @@ input_file="$1"
 
 mkdir -p logs/
 
-for ((p=2; p<=64; p*=2)); do
+generate_and_submit_pbs_script() {
+    local select_nodes="$1"
+    local ncpus="$2"
+    local mem="$3"
+
     # Create a temporary PBS script
     job_script=$(mktemp)
 
     cat <<EOF > "$job_script"
 #!/bin/bash
-#PBS -l select=1:ncpus=$p:mem=32gb
+#PBS -l select=${select_nodes}:ncpus=${ncpus}:mem=${mem}
 #PBS -l walltime=00:10:00
 #PBS -q short_cpuQ
-#PBS -N parallel_mst_${p}
-#PBS -o logs/omp_parallel_mst.o${p}
-#PBS -e logs/omp_parallel_mst.e${p}
+#PBS -N parallel_mst_${ncpus}
+#PBS -o logs/omp_parallel_mst.o${ncpus}
+#PBS -e logs/omp_parallel_mst.e${ncpus}
 
 ${PWD}/build/bin/parallel_mst "$input_file"
 EOF
 
-    echo "Submitting job with $p processes..."
+    echo "Submitting job with $ncpus processes on $select_nodes node(s)..."
     qsub "$job_script"
+}
+
+for ((p=2; p<=64; p*=2)); do
+  generate_and_submit_pbs_script 1 "$p" 32gb
 done
+
+generate_and_submit_pbs_script 2 64 32gb
+

@@ -99,6 +99,8 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
 }
 
 tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
+  /*omp_set_num_threads(2);*/
+
   const char *file_name = argv[argc - 1];
   tot_mst_weight_t mst_weight = 0;
 
@@ -114,7 +116,7 @@ tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
   };
 
   if (DEBUG)
-    printf("Running in sequential mode\n");
+    printf("Running in OMP mode\n");
 
   parse_graph_file(graph, file_name);
   init_graph(mst, graph->V, graph->V - 1);
@@ -122,6 +124,13 @@ tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
   double start_time = omp_get_wtime();
   omp_mst(graph, mst);
   double total_time = omp_get_wtime() - start_time;
+
+  if (HPC) {
+#pragma omp parallel
+    if (omp_get_thread_num() == 0) {
+      printf("omp %s %d %f\n", file_name, omp_get_num_threads(), total_time);
+    }
+  }
 
   for (graph_size_t i = 0; i < mst->E; i++) {
     mst_weight += mst->edges[i].weight;

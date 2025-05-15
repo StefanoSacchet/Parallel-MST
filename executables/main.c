@@ -11,12 +11,10 @@ int main(int argc, char *argv[]) {
   }
 
 #ifdef SERIAL
-  printf("Running in SERIAL mode\n");
   run_serial_mst(argc, argv);
 #elif defined(MPI)
   run_mpi_mst(argc, argv);
 #elif defined(OMP)
-  printf("Running in OMP mode\n");
   run_omp_mst(argc, argv);
 #else
 #error "Invalid RUN_TYPE: must be SERIAL or MPI"

@@ -79,6 +79,10 @@ tot_mst_weight_t serial_mst(struct Graph *graph) {
 tot_mst_weight_t run_serial_mst(int argc, char *argv[]) {
   const char *file_name = argv[argc - 1];
 
+  if (DEBUG) {
+    printf("Running in serial mode\n");
+  }
+
   Graph_t *graph = &(Graph_t){
       .V = 0,
       .E = 0,

@@ -57,7 +57,7 @@ dkms.conf
 .vscode
 .cache/
 .venv/
-logs/
+logs*/
 dataset/generated/
 
 # Python venv

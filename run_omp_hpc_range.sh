@@ -42,5 +42,4 @@ for ((p=2; p<=64; p*=2)); do
   generate_and_submit_pbs_script 1 "$p" 32gb
 done
 
-generate_and_submit_pbs_script 2 64 32gb
-
+# generate_and_submit_pbs_script 2 64 32gb

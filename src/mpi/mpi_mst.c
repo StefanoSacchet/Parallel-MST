@@ -248,11 +248,8 @@ tot_mst_weight_t run_mpi_mst(int argc, char *argv[]) {
       /*printf("MST edges: %llu\n", mst->E);*/
       printf("Total time: %f\n", total_time);
       printf("Total weight of MST: %" PRIu64 "\n", mst_weight);
-    }
-
-    // Log resutls to file
-    if (!HPC)
       log_result("mpi", file_name, size, total_time);
+    }
 
     // Free graph memory
     free_graph(mst);

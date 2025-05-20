@@ -35,7 +35,10 @@ endef
 
 define exec_permission
 	chmod +x load_modules.sh;
-	chmod +x run_hpc.sh;
+	chmod +x run_mpi_hpc.sh;
+	chmod +x run_omp_hpc.sh;
+	chmod +x run_mpi_hpc_range.sh;
+	chmod +x run_omp_hpc_range.sh;
 	chmod +x run_mpi.sh;
 endef
 

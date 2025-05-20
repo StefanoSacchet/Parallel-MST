@@ -70,8 +70,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
       cheapest[i].weight = -1;
     }
 
-// Find cheapest edges - two-phase approach to eliminate locks
-// Phase 1: Each thread finds local cheapest edges
+// Find cheapest edges. 1: Each thread finds local cheapest edges
 #pragma omp parallel
     {
       int tid = omp_get_thread_num();
@@ -89,19 +88,17 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
         graph_size_t set2 = find(subsets, current_edge.dest);
 
         if (set1 != set2) {
-          // Update local cheapest for set1
           if (my_cheapest[set1].weight == -1 || my_cheapest[set1].weight > current_edge.weight) {
             my_cheapest[set1] = current_edge;
           }
 
-          // Update local cheapest for set2
           if (my_cheapest[set2].weight == -1 || my_cheapest[set2].weight > current_edge.weight) {
             my_cheapest[set2] = current_edge;
           }
         }
       }
 
-// Phase 2: Merge local results into global cheapest array
+// 2: Merge local results into global cheapest array
 #pragma omp for schedule(auto)
       for (graph_size_t v = 0; v < n_vertices; ++v) {
         for (int t = 0; t < num_threads; ++t) {
@@ -115,7 +112,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     }
 
     // Optimize the union-find operations by reducing contention
-    // Process edges in batches to increase parallelism
+    // Process edges in batches
     graph_size_t old_edges_mst = edges_mst;
     Edge_t *candidates = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
     graph_size_t n_candidates = 0;
@@ -134,7 +131,6 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     }
 
 // Sort candidates by weight to prioritize lighter edges
-// This helps to build a more optimal MST faster
 #pragma omp parallel
     {
 #pragma omp single
@@ -155,9 +151,9 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
 
     free(candidates);
 
-    // If no new edges were added, we might be stuck
+    // If no new edges were added, it might be stuck
     if (old_edges_mst == edges_mst) {
-      // Handle the case where the graph might be disconnected
+      // The graph might be disconnected
       break;
     }
   }

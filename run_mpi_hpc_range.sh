@@ -25,7 +25,7 @@ generate_and_submit_pbs_script() {
     cat <<EOF > "$job_script"
 #!/bin/bash
 #PBS -l select=${select_nodes}:ncpus=${ncpus}:mem=${mem}
-#PBS -l walltime=00:10:00
+#PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst_${ncpus}
 #PBS -o logs/mpi_parallel_mst.o${ncpus}

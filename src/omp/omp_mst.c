@@ -27,6 +27,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
 
   // Locks for each subset to protect concurrent writes to cheapest[]
   omp_lock_t *locks = malloc(n_vertices * sizeof(omp_lock_t));
+#pragma omp simd
   for (graph_size_t i = 0; i < n_vertices; ++i) {
     omp_init_lock(&locks[i]);
   }
@@ -44,14 +45,14 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
   while (edges_mst < n_vertices - 1) {
 // Reset cheapest array
 #pragma omp simd
-    for (graph_size_t j = 0; j < n_vertices; ++j) {
-      cheapest[j].weight = -1;
+    for (graph_size_t i = 0; i < n_vertices; ++i) {
+      cheapest[i].weight = -1;
     }
 
 // Find cheapest edges for each component in parallel
 #pragma omp parallel for schedule(auto)
-    for (graph_size_t j = 0; j < n_edges; ++j) {
-      Edge_t current_edge = edges[j];
+    for (graph_size_t i = 0; i < n_edges; ++i) {
+      Edge_t current_edge = edges[i];
       graph_size_t set1 = find(subsets, current_edge.src);
       graph_size_t set2 = find(subsets, current_edge.dest);
 
@@ -71,16 +72,14 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     }
 
     // Add the selected cheapest edges to MST
-    /*#pragma omp parallel for schedule(auto)*/
-    for (graph_size_t j = 0; j < n_vertices; ++j) {
-      if (cheapest[j].weight != -1) {
-        Edge_t edge = cheapest[j];
+    for (graph_size_t i = 0; i < n_vertices; ++i) {
+      if (cheapest[i].weight != -1) {
+        Edge_t edge = cheapest[i];
         graph_size_t from = find(subsets, edge.src);
         graph_size_t to = find(subsets, edge.dest);
 
         if (from != to) {
           mst->edges[edges_mst] = edge;
-#pragma omp atomic
           edges_mst++;
           unionSets(subsets, from, to);
         }
@@ -99,8 +98,6 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
 }
 
 tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
-  /*omp_set_num_threads(2);*/
-
   const char *file_name = argv[argc - 1];
   tot_mst_weight_t mst_weight = 0;
 

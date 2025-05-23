@@ -21,8 +21,8 @@ else
     input="${3#/}"
     input="${input%/}"
     
-    log_folder="$log_folder/$input"
-    echo "Using log folder: $log_folder/"
+    log_folder="$log_folder/$input/"
+    echo "Using log folder: $log_folder"
 fi
 
 mkdir -p $log_folder

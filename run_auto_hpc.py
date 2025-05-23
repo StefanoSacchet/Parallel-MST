@@ -9,7 +9,7 @@ def wait_completition(log_folder, file_path):
         sleep(20)
 
 def run_mpi(num_processes, input_file, log_folder):
-    cmd = f"./run_mpi_hpc {num_processes} {input_file} {log_folder}"
+    cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {log_folder}"
     file_path=f"mpi_parallel_mst.o{num_processes}"
 
     os.system(cmd)
@@ -18,7 +18,7 @@ def run_mpi(num_processes, input_file, log_folder):
     wait_completition(log_folder, file_path)
 
 def run_omp(num_processes, input_file, log_folder):
-    cmd = f"./run_omp_hpc {num_processes} {input_file} {log_folder}"
+    cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {log_folder}"
     file_path=f"omp_parallel_mst.o{num_processes}"
 
     os.system(cmd)
@@ -35,8 +35,9 @@ def run_script():
         print("Found non existing mode. Use 'mpi', 'omp' or 'all'")
         exit(1)
 
+    run_number=1
     if len(argv) == 4:
-        run_number=argv[3]
+        run_number=int(argv[3])
 
     mode = argv[1]
     input_file = argv[2]
@@ -57,7 +58,6 @@ def run_script():
             num_processes*=2    
 
 if __name__ == "__main__":
-    print(len(argv))
     if len(argv) < 3:
         print("Usage: python3 run_auto.py <[mpi, omp]> <input_file> <runs_number>")
         exit(1)

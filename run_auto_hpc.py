@@ -31,7 +31,6 @@ def run_all(num_processes, input_file, log_folder):
     run_omp(num_processes, input_file, log_folder)
 
 def run_script():
-    print(f"{argv[1]} {argv[2]} {argv[3]}")
     if argv[1] not in ["mpi", "omp", "all"]:
         print("Found non existing mode. Use 'mpi', 'omp' or 'all'")
         exit(1)

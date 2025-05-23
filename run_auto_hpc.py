@@ -4,7 +4,7 @@ from time import sleep
 from datetime import datetime
 
 def wait_completition(log_folder, file_path):
-    path = log_folder + '/' + file_path
+    path = 'logs/' + log_folder + '/' + file_path
     while not os.path.exists(path):
         sleep(20)
 

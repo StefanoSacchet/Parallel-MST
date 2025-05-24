@@ -19,8 +19,8 @@ job_script=$(mktemp)
 
 cat <<EOF > "$job_script"
 #!/bin/bash
-#PBS -l select=1:ncpus=1:mem=32gb
-#PBS -l walltime=00:15:00
+#PBS -l select=1:ncpus=1:mem=64gb
+#PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst
 #PBS -o logs/serial_parallel_mst.o1

@@ -7,7 +7,7 @@
 #include "logger.h"
 #include "tools/graph_parser.h"
 
-// Helper function to compare edges by weight for sorting
+// Compare edges by weight for sorting
 static int compare_edges(const void *a, const void *b) {
   return ((Edge_t *)a)->weight - ((Edge_t *)b)->weight;
 }
@@ -30,7 +30,6 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     exit(EXIT_FAILURE);
   }
 
-  // Use atomic operations instead of locks for better performance
   graph_size_t edges_mst = 0;
 
   // Initialize subsets in parallel
@@ -41,7 +40,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     cheapest[v].weight = -1;
   }
 
-  // Temporary buffer for edge candidates to reduce contention
+  // Temporary buffer for edge candidates
   Edge_t *local_cheapest;
   int num_threads;
 
@@ -58,19 +57,13 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     }
   }
 
-// Zero out the local_cheapest array
-#pragma omp parallel for schedule(auto)
-  for (graph_size_t i = 0; i < n_vertices * num_threads; ++i) {
-    local_cheapest[i].weight = -1;
-  }
-
   while (edges_mst < n_vertices - 1) {
 #pragma omp parallel for simd schedule(static)
     for (graph_size_t i = 0; i < n_vertices; ++i) {
       cheapest[i].weight = -1;
     }
 
-// Find cheapest edges. 1: Each thread finds local cheapest edges
+// Each thread finds local cheapest edges
 #pragma omp parallel
     {
       int tid = omp_get_thread_num();
@@ -98,7 +91,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
         }
       }
 
-// 2: Merge local results into global cheapest array
+// Merge local results into global cheapest array
 #pragma omp for schedule(auto)
       for (graph_size_t v = 0; v < n_vertices; ++v) {
         for (int t = 0; t < num_threads; ++t) {
@@ -202,7 +195,7 @@ tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {
   }
 
 // Compute MST weight in parallel
-#pragma omp parallel for reduction(+ : mst_weight) schedule(static)
+#pragma omp parallel for reduction(+ : mst_weight) schedule(auto)
   for (graph_size_t i = 0; i < mst->E; i++) {
     mst_weight += mst->edges[i].weight;
   }

@@ -43,10 +43,13 @@ void scatter_edge_list(Edge_t *edges, Edge_t **edges_part_ptr, const graph_size_
     }
 
     graph_size_t offset = 0;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size; ++i) {
       graph_size_t count = *edges_per_core + (i == size - 1 ? remainder : 0);
       if (count > INT_MAX || offset > INT_MAX) {
         fprintf(stderr, "Overflow detected in edge scatter\n");
+        free(send_counts);
+        free(displs);
+        free(*edges_part_ptr);
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
       }
       send_counts[i] = (int)count;
@@ -103,24 +106,27 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
   Edge_t *cheapest_edge_received = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
   if (cheapest == NULL || cheapest_edge_received == NULL) {
     fprintf(stderr, "Failed to allocate memory for cheapest edges\n");
+    free(subsets);
+    free(edges_part);
+    free(cheapest ? cheapest : cheapest_edge_received);
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
   // Initialize subsets and cheapest array
-  for (graph_size_t v = 0; v < n_vertices; v++) {
+  for (graph_size_t v = 0; v < n_vertices; ++v) {
     subsets[v].parent = v;
     subsets[v].rank = 0;
     cheapest[v].weight = -1;
   }
 
-  for (graph_size_t i = 0; i < n_vertices && edges_mst < n_vertices - 1; i++) {
+  for (graph_size_t i = 0; i < n_vertices && edges_mst < n_vertices - 1; ++i) {
     // Reset cheapest edges array
-    for (graph_size_t j = 0; j < n_vertices; j++) {
+    for (graph_size_t j = 0; j < n_vertices; ++j) {
       cheapest[j].weight = -1;
     }
 
     // Traverse through all edges and update cheapest of every component
-    for (graph_size_t j = 0; j < edges_per_core; j++) {
+    for (graph_size_t j = 0; j < edges_per_core; ++j) {
       Edge_t current_edge = edges_part[j];
       graph_size_t set1 = find(subsets, current_edge.src);
       graph_size_t set2 = find(subsets, current_edge.dest);
@@ -144,7 +150,7 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
           MPI_Recv(cheapest_edge_received, (int)n_vertices, MPI_EDGE_T, from, 0, MPI_COMM_WORLD,
                    &status);
 
-          for (graph_size_t j = 0; j < n_vertices; j++) {
+          for (graph_size_t j = 0; j < n_vertices; ++j) {
             if (cheapest_edge_received[j].weight != -1 &&
                 (cheapest[j].weight == -1 ||
                  cheapest_edge_received[j].weight < cheapest[j].weight)) {
@@ -163,7 +169,7 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
     MPI_Bcast(cheapest, (int)n_vertices, MPI_EDGE_T, 0, MPI_COMM_WORLD);
 
     // Add new edges to MST
-    for (graph_size_t j = 0; j < n_vertices; j++) {
+    for (graph_size_t j = 0; j < n_vertices; ++j) {
       if (cheapest[j].weight != -1) {
         Edge_t edge = cheapest[j];
 
@@ -222,15 +228,6 @@ tot_mst_weight_t run_hybrid_mst(int argc, char *argv[]) {
     start_time = MPI_Wtime();
   }
 
-  // If number of processes is much greater than number of edges
-  /*if (graph->E / 3 < size && graph->E != size) {*/
-  /*  if (rank == 0) {*/
-  /*    fprintf(stderr, "Too many processes compared to edges!\n");*/
-  /*  }*/
-  /*  MPI_Finalize();*/
-  /*  exit(EXIT_FAILURE);*/
-  /*}*/
-
   hybrid_mst(graph, mst);
 
   if (rank == 0) {
@@ -245,7 +242,6 @@ tot_mst_weight_t run_hybrid_mst(int argc, char *argv[]) {
     }
 
     if (!HPC) {
-      /*printf("MST edges: %llu\n", mst->E);*/
       printf("Total time: %f\n", total_time);
       printf("Total weight of MST: %" PRIu64 "\n", mst_weight);
       log_result("mpi", file_name, size, total_time);

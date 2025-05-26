@@ -1,4 +1,5 @@
 #!/bin/bash
+# This script runs the MPI program on HPC with a range of processes
 
 # Check if input file is passed
 if [ $# -lt 1 ]; then
@@ -31,7 +32,7 @@ generate_and_submit_pbs_script() {
 #PBS -o logs/omp_parallel_mst.o${ncpus}
 #PBS -e logs/omp_parallel_mst.e${ncpus}
 
-${PWD}/build/bin/parallel_mst "$input_file"
+${PWD}/build/bin/omp_mst "$input_file"
 EOF
 
     echo "Submitting job with $ncpus processes on $select_nodes node(s)..."
@@ -42,4 +43,3 @@ for ((p=2; p<=64; p*=2)); do
   generate_and_submit_pbs_script 1 "$p" 64gb
 done
 
-# generate_and_submit_pbs_script 2 64 32gb

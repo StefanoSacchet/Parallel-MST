@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script runs the mpi program with number of preocesses passed as input
+# This script runs the OMP program on HPC with number of preocesses passed as input
 
 # Check if a parameter is passed
 if [ $# -lt 2 ]; then
@@ -42,7 +42,7 @@ cat <<EOF > "$job_script"
 #PBS -N parallel_mst_${num_processes}
 #PBS -o ${log_folder}omp_parallel_mst.o${num_processes}
 #PBS -e ${log_folder}omp_parallel_mst.e${num_processes}
-${PWD}/build/bin/parallel_mst "$input_file"
+${PWD}/build/bin/pomp_mst "$input_file"
 EOF
 
 qsub "$job_script"

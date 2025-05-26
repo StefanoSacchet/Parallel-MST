@@ -1,4 +1,4 @@
-#include "mpi_types.h"
+#include "hybrid_types.h"
 
 #include "common.h"
 

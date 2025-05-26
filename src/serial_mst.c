@@ -9,10 +9,10 @@
 #include "omp_mst.h"
 
 // Serial Boruvka's algorithm to find MST
-tot_mst_weight_t serial_mst(struct Graph *graph) {
+tot_mst_weight_t serial_mst(Graph_t *graph) {
   graph_size_t V = graph->V, E = graph->E;
-  struct Edge *edge = graph->edges;
-  struct Subset *subsets = (struct Subset *)malloc(V * sizeof(struct Subset));
+  Edge_t *edge = graph->edges;
+  Subset_t *subsets = (Subset_t *)malloc(V * sizeof(Subset_t));
   // Cheapest outgoing edge for each component
   Edge_t *cheapest = (Edge_t *)malloc(V * sizeof(Edge_t));
 

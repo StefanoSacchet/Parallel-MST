@@ -18,7 +18,7 @@ def run_serial(input_file, log_folder):
     print(f"{time} Running SERIAL. Waiting completition...")
 
     wait_completition(log_folder, file_path)
-
+    print(f"{datetime.now().strftime("%H:%M")} Completed SERIAL.")
 
 def run_mpi(num_processes, input_file, log_folder):
     cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {log_folder}"
@@ -30,6 +30,7 @@ def run_mpi(num_processes, input_file, log_folder):
     print(f"{time} Running MPI with {num_processes}. Waiting completition...")
 
     wait_completition(log_folder, file_path)
+    print(f"{datetime.now().strftime("%H:%M")} Completed MPI with {num_processes}.")
 
 def run_omp(num_processes, input_file, log_folder):
     cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {log_folder}"
@@ -40,10 +41,7 @@ def run_omp(num_processes, input_file, log_folder):
     print(f"{time} Running OMP with {num_processes}. Waiting completition...")
 
     wait_completition(log_folder, file_path) 
-
-def run_all(num_processes, input_file, log_folder):
-    run_mpi(num_processes, input_file, log_folder)
-    run_omp(num_processes, input_file, log_folder)
+    print(f"{datetime.now().strftime("%H:%M")} Completed OMP with {num_processes}.")
 
 def run_script():
     if argv[1] not in ["mpi", "omp", "all"]:
@@ -62,13 +60,13 @@ def run_script():
     while num_processes<=64:
         for i in range(0, run_number):
             log_folder=f"{time}/{i}_run"
-            # run script
-            if mode == "mpi":
+            if mode == "mpi" or mode == "all":
                 run_mpi(num_processes, input_file, log_folder)
-            elif mode == "omp":
+
+        for i in range(0, run_number):
+            log_folder=f"{time}/{i}_run"
+            if mode == "omp" or mode == "all":
                 run_omp(num_processes, input_file, log_folder)
-            elif mode == "all":
-                run_all(num_processes, input_file, log_folder)
                 
         num_processes*=2
  

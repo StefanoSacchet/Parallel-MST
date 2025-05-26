@@ -18,7 +18,8 @@ def run_serial(input_file, log_folder):
     print(f"{time} Running SERIAL. Waiting completition...")
 
     wait_completition(log_folder, file_path)
-    print(f"{datetime.now().strftime("%H:%M")} Completed SERIAL.")
+    time = datetime.now().strftime("%H:%M")
+    print(f"{time} Completed SERIAL.")
 
 def run_mpi(num_processes, input_file, log_folder):
     cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {log_folder}"
@@ -30,7 +31,8 @@ def run_mpi(num_processes, input_file, log_folder):
     print(f"{time} Running MPI with {num_processes}. Waiting completition...")
 
     wait_completition(log_folder, file_path)
-    print(f"{datetime.now().strftime("%H:%M")} Completed MPI with {num_processes}.")
+    time = datetime.now().strftime("%H:%M")
+    print(f"{time} Completed MPI with {num_processes}.")
 
 def run_omp(num_processes, input_file, log_folder):
     cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {log_folder}"
@@ -41,7 +43,8 @@ def run_omp(num_processes, input_file, log_folder):
     print(f"{time} Running OMP with {num_processes}. Waiting completition...")
 
     wait_completition(log_folder, file_path) 
-    print(f"{datetime.now().strftime("%H:%M")} Completed OMP with {num_processes}.")
+    time = datetime.now().strftime("%H:%M")
+    print(f"{time} Completed OMP with {num_processes}.")
 
 def run_script():
     if argv[1] not in ["mpi", "omp", "all"]:

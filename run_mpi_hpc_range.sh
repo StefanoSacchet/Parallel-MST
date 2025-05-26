@@ -1,4 +1,5 @@
 #!/bin/bash
+# This script runs the MPI program on HPC with a range of processes
 
 # Check if input file is passed
 if [ $# -lt 1 ]; then
@@ -32,7 +33,7 @@ generate_and_submit_pbs_script() {
 #PBS -e logs/mpi_parallel_mst.e${ncpus}
 
 module load mpich-3.2
-mpirun.actual -n ${ncpus} ${PWD}/build/bin/parallel_mst "$input_file"
+mpirun.actual -n ${ncpus} ${PWD}/build/bin/mpi_mst "$input_file"
 EOF
 
     echo "Submitting job with $ncpus processes on $select_nodes node(s)..."

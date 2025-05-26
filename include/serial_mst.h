@@ -8,7 +8,7 @@
 /** @brief Boruvka's algorithm to find MST
  *  @param graph The input graph
  */
-tot_mst_weight_t serial_mst(struct Graph *graph);
+tot_mst_weight_t serial_mst(Graph_t *graph);
 
 /** @brief Run the serial version of Boruvka algorithm
  *  @param argv Array of arguments

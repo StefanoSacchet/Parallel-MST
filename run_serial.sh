@@ -2,12 +2,28 @@
 
 # Check if input file is passed
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <input_file>"
+    echo "Usage: $0 <input_file> <optional_log_folder>"
     exit 1
 fi
 
 input_file="$1"
-mkdir -p logs/
+log_folder="logs"
+
+if [ -z "$2" ]; then
+    log_folder="logs/"
+    echo "Using default log folder: '$log_folder'"
+else
+    # Remove any trailing slash from log_folder
+    log_folder="${log_folder%/}"
+    # Remove any leading/trailing slashes from input
+    input="${2#/}"
+    input="${input%/}"
+    
+    log_folder="$log_folder/$input/"
+    echo "Using log folder: $log_folder"
+fi
+
+mkdir -p $log_folder
 
 source load_modules.sh
 echo "Building release SERIAL..."
@@ -23,8 +39,8 @@ cat <<EOF > "$job_script"
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst
-#PBS -o logs/serial_parallel_mst.o1
-#PBS -e logs/serial_parallel_mst.e1
+#PBS -o ${log_folder}serial_parallel_mst.o1
+#PBS -e ${log_folder}serial_parallel_mst.e1
 ${PWD}/build/bin/parallel_mst "$input_file"
 EOF
 

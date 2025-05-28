@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script runs the mpi program with number of preocesses passed as input
+# This script runs the mpi program on hpc with number of preocesses passed as input
 
 # Check if a parameter is passed
 if [ $# -lt 2 ]; then
@@ -43,7 +43,7 @@ cat <<EOF > "$job_script"
 #PBS -o ${log_folder}mpi_parallel_mst.o${num_processes}
 #PBS -e ${log_folder}mpi_parallel_mst.e${num_processes}
 module load mpich-3.2
-mpirun.actual -n $num_processes ${PWD}/build/bin/parallel_mst "$input_file"
+mpirun.actual -n $num_processes ${PWD}/build/bin/mpi_mst "$input_file"
 EOF
 
 qsub "$job_script"

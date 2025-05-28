@@ -10,5 +10,9 @@ fi
 num_processes="$1"
 input_file="$2"
 
-mpiexec -n "$num_processes" build/bin/parallel_mst "$input_file"
+echo "Building release MPI..."
+make clean
+make release RUN_TYPE=MPI
+
+mpiexec -n "$num_processes" build/bin/mpi_mst "$input_file"
 

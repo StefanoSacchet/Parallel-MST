@@ -2,13 +2,13 @@ MAKEFLAGS += --no-print-directory
 CORES = $(shell nproc)
 
 # Allowed run types 
-VALID_RUN_TYPES := SERIAL MPI OMP
+VALID_RUN_TYPES := ALL SERIAL MPI OMP HYBRID TESTS GRAPH_GEN
 
 $(info ==========================================)
 ifndef RUN_TYPE
-$(info [INFO] RUN_TYPE not set — using default: MPI)
-$(info [INFO] Available options: SERIAL | MPI | OMP)
-RUN_TYPE = MPI
+$(info [INFO] RUN_TYPE not set — using default: ALL)
+$(info [INFO] Available options: ALL | SERIAL | MPI | OMP | HYBRID | TESTS | GRAPH_GEN)
+RUN_TYPE = ALL
 endif
 
 ifeq ($(filter $(RUN_TYPE), $(VALID_RUN_TYPES)),)

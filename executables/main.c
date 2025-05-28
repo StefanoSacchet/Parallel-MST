@@ -1,8 +1,15 @@
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "mpi_mst.h"
-#include "omp_mst.h"
+#ifdef SERIAL
 #include "serial_mst.h"
+#elif defined(MPI)
+#include "mpi_mst.h"
+#elif defined(OMP)
+#include "omp_mst.h"
+#elif defined(HYBRID)
+#include "hybrid_mst.h"
+#endif
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -16,8 +23,8 @@ int main(int argc, char *argv[]) {
   run_mpi_mst(argc, argv);
 #elif defined(OMP)
   run_omp_mst(argc, argv);
-#else
-#error "Invalid RUN_TYPE: must be SERIAL or MPI"
+#elif defined(HYBRID)
+  run_hybrid_mst(argc, argv);
 #endif
 
   return 0;

@@ -3,48 +3,36 @@ import os
 from time import sleep
 from datetime import datetime
 
-def wait_completition(log_folder, file_path):
-    path = 'logs/' + log_folder + '/' + file_path
-    while not os.path.exists(path):
-        sleep(20)
+def wait_completition(log_folder):
+    path = 'logs/' + log_folder
+    file_count = 0
 
-def run_serial(input_file, log_folder):
-    cmd = f"./run_serial.sh {input_file} {log_folder}"
-    file_path="serial_parallel_mst.o1"
+    while file_count != 24:
+        file_count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+        sleep(40)
+
+def run_serial(input_file):
+    cmd = f"./run_serial.sh {input_file}"
 
     os.system(cmd)
 
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running SERIAL. Waiting completition...")
 
-    wait_completition(log_folder, file_path)
-    time = datetime.now().strftime("%H:%M")
-    print(f"{time} Completed SERIAL.")
-
 def run_mpi(num_processes, input_file, log_folder):
     cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {log_folder}"
-    file_path=f"mpi_parallel_mst.o{num_processes}"
 
     os.system(cmd)
 
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running MPI with {num_processes}. Waiting completition...")
 
-    wait_completition(log_folder, file_path)
-    time = datetime.now().strftime("%H:%M")
-    print(f"{time} Completed MPI with {num_processes}.")
-
 def run_omp(num_processes, input_file, log_folder):
     cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {log_folder}"
-    file_path=f"omp_parallel_mst.o{num_processes}"
 
     os.system(cmd)
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running OMP with {num_processes}. Waiting completition...")
-
-    wait_completition(log_folder, file_path) 
-    time = datetime.now().strftime("%H:%M")
-    print(f"{time} Completed OMP with {num_processes}.")
 
 def run_script():
     if argv[1] not in ["mpi", "omp", "all"]:
@@ -60,22 +48,21 @@ def run_script():
 
     num_processes = 2
     time = datetime.now().strftime("%d_%m_%Y@%H_%M")
-    while num_processes<=64:
-        for i in range(0, run_number):
-            log_folder=f"{time}/{i}_run"
+    for i in range(0, run_number):
+        log_folder=f"{time}/{i}_run"
+        while num_processes<=64:
             if mode == "mpi" or mode == "all":
                 run_mpi(num_processes, input_file, log_folder)
 
-        for i in range(0, run_number):
-            log_folder=f"{time}/{i}_run"
             if mode == "omp" or mode == "all":
                 run_omp(num_processes, input_file, log_folder)
                 
         num_processes*=2
+
+        wait_completition(log_folder)
  
-    for i in range(0, run_number):
-        log_folder=f"{time}/{i}_run"
-        run_serial(input_file, log_folder)   
+
+    run_serial(input_file)   
 
 if __name__ == "__main__":
     if len(argv) < 3:

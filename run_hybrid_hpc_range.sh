@@ -29,11 +29,11 @@ generate_and_submit_pbs_script() {
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N parallel_mst_${ncpus}
-#PBS -o logs/mpi_parallel_mst.o${ncpus}
-#PBS -e logs/mpi_parallel_mst.e${ncpus}
+#PBS -o logs/hybrid_parallel_mst.o${ncpus}
+#PBS -e logs/hybrid_parallel_mst.e${ncpus}
 
 module load mpich-3.2
-mpirun.actual -n ${ncpus} ${PWD}/build/bin/mpi_mst "$input_file"
+mpirun.actual -n ${ncpus} ${PWD}/build/bin/hybrid_mst "$input_file"
 EOF
 
     echo "Submitting job with $ncpus processes on $select_nodes node(s)..."

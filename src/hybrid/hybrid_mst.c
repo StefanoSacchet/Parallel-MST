@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <mpi.h>
+#include <omp.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -112,31 +113,79 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
-  // Initialize subsets and cheapest array
+// Initialize subsets and cheapest array
+#pragma omp simd
   for (graph_size_t v = 0; v < n_vertices; ++v) {
     subsets[v].parent = v;
     subsets[v].rank = 0;
     cheapest[v].weight = -1;
   }
 
+  int num_threads = 1;
+#pragma omp parallel
+  {
+#pragma omp single
+    num_threads = omp_get_num_threads();
+  }
+
+  // Allocate thread-local cheapest buffers
+  Edge_t **cheapest_local = malloc(num_threads * sizeof(Edge_t *));
+#pragma omp parallel for schedule(auto)
+  for (int t = 0; t < num_threads; ++t) {
+    cheapest_local[t] = calloc(n_vertices, sizeof(Edge_t));
+#pragma omp simd
+    for (graph_size_t v = 0; v < n_vertices; ++v) {
+      cheapest_local[t][v].weight = -1;
+    }
+  }
+
   for (graph_size_t i = 0; i < n_vertices && edges_mst < n_vertices - 1; ++i) {
-    // Reset cheapest edges array
+// Reset cheapest edges array
+#pragma omp simd
     for (graph_size_t j = 0; j < n_vertices; ++j) {
       cheapest[j].weight = -1;
     }
 
     // Traverse through all edges and update cheapest of every component
-    for (graph_size_t j = 0; j < edges_per_core; ++j) {
-      Edge_t current_edge = edges_part[j];
-      graph_size_t set1 = find(subsets, current_edge.src);
-      graph_size_t set2 = find(subsets, current_edge.dest);
+#pragma omp parallel
+    {
+      int tid = omp_get_thread_num();
+      Edge_t *local = cheapest_local[tid];
 
-      if (set1 != set2) {
-        if (cheapest[set1].weight == -1 || cheapest[set1].weight > current_edge.weight) {
-          cheapest[set1] = current_edge;
+// Initialize thread-local cheapest array
+#pragma omp simd
+      for (graph_size_t i = 0; i < n_vertices; ++i) {
+        local[i].weight = -1;
+      }
+
+#pragma omp for schedule(auto)
+      for (graph_size_t j = 0; j < edges_per_core; ++j) {
+        Edge_t current_edge = edges_part[j];
+        graph_size_t set1 = find(subsets, current_edge.src);
+        graph_size_t set2 = find(subsets, current_edge.dest);
+
+        if (set1 != set2) {
+          if (local[set1].weight == -1 || current_edge.weight < local[set1].weight) {
+            local[set1] = current_edge;
+          }
+          if (local[set2].weight == -1 || current_edge.weight < local[set2].weight) {
+            local[set2] = current_edge;
+          }
         }
-        if (cheapest[set2].weight == -1 || cheapest[set2].weight > current_edge.weight) {
-          cheapest[set2] = current_edge;
+      }
+    }
+
+// Merge thread-local cheapest into global `cheapest`
+#pragma simd
+    for (graph_size_t v = 0; v < n_vertices; ++v) {
+      cheapest[v].weight = -1;
+    }
+
+    for (int t = 0; t < num_threads; ++t) {
+      for (graph_size_t v = 0; v < n_vertices; ++v) {
+        if (cheapest_local[t][v].weight != -1 &&
+            (cheapest[v].weight == -1 || cheapest_local[t][v].weight < cheapest[v].weight)) {
+          cheapest[v] = cheapest_local[t][v];
         }
       }
     }
@@ -187,6 +236,12 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
     }
   }
 
+// Free temporary buffers
+#pragma simd
+  for (int t = 0; t < num_threads; ++t) {
+    free(cheapest_local[t]);
+  }
+  free(cheapest_local);
   free(edges_part);
   free(subsets);
   free(cheapest);
@@ -225,6 +280,8 @@ tot_mst_weight_t run_hybrid_mst(int argc, char *argv[]) {
       printf("Running in MPI mode\n");
     parse_graph_file(graph, file_name);
     init_graph(mst, graph->V, graph->V - 1);
+    /*omp_set_num_threads(omp_get_max_threads());*/
+    omp_set_num_threads(2);
     start_time = MPI_Wtime();
   }
 

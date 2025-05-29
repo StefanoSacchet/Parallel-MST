@@ -50,7 +50,7 @@ cat <<EOF > "$job_script"
 #PBS -N parallel_mst_${num_processes}_${placement}
 #PBS -o ${log_folder}omp_parallel_mst_${placement}.o${num_processes}
 #PBS -e ${log_folder}omp_parallel_mst_${placement}.e${num_processes}
-${PWD}/build/bin/pomp_mst "$input_file"
+${PWD}/build/bin/omp_mst "$input_file"
 EOF
 
 qsub "$job_script"

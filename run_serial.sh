@@ -38,10 +38,10 @@ cat <<EOF > "$job_script"
 #PBS -l select=1:ncpus=1:mem=64gb
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
-#PBS -N parallel_mst
+#PBS -N serial_mst
 #PBS -o ${log_folder}serial_parallel_mst.o1
 #PBS -e ${log_folder}serial_parallel_mst.e1
-${PWD}/build/bin/parallel_mst "$input_file"
+${PWD}/build/bin/serial_mst "$input_file"
 EOF
 
 qsub "$job_script"

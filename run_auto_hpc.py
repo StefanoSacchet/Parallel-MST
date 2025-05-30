@@ -21,55 +21,67 @@ def run_serial(input_file):
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running SERIAL. ")
 
-def run_mpi(num_processes, input_file, place, log_folder):
-    cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {place} {log_folder}"
+def run_mpi(n_cores, input_file, cpus, place, log_folder):
+    cmd = f"./run_mpi_hpc.sh {n_cores} {input_file} {cpus} {place} {log_folder}"
 
     os.system(cmd)
 
     time = datetime.now().strftime("%H:%M")
-    print(f"{time} Running MPI with {num_processes}_{place}.")
+    print(f"{time} Running MPI with {n_cores}_{place}.")
 
-def run_omp(num_processes, input_file, place, log_folder):
-    cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {place} {log_folder}"
+def run_omp(n_cores, input_file, place, cpus, log_folder):
+    cmd = f"./run_omp_hpc.sh {n_cores} {input_file} {cpus} {place} {log_folder}"
 
     os.system(cmd)
     time = datetime.now().strftime("%H:%M")
-    print(f"{time} Running OMP with {num_processes}_{place}")
+    print(f"{time} Running OMP with {n_cores}_{place}")
+
+def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
+    for i in range(0, n_run):
+        log_folder=f"{time}/{cpus}_cpu/{place}/{i}_run"
+        file_count=0
+        n_cores = 2
+        while n_cores<=max_cores:
+            if mode == "mpi" or mode == "all":
+                run_mpi(n_cores, input_file, cpus, place, log_folder)
+                file_count+=2
+                sleep(10)
+
+            if mode == "omp" or mode == "all":
+                run_omp(n_cores, input_file, cpus, place, log_folder)
+                file_count+=2
+                sleep(10)
+
+            # TODO add hybrid
+            
+            n_cores*=2
+
+        print(f"Submitted {file_count/2} jobs with {place}. Waiting for completition.")
+        wait_completition(log_folder, file_count)
 
 def run_script():
     if argv[1] not in ["mpi", "omp", "all"]:
         print("Found non existing mode. Use 'mpi', 'omp' or 'all'")
         exit(1)
 
-    run_number=1
+    n_run=1
     if len(argv) == 4:
-        run_number=int(argv[3])
+        n_run=int(argv[3])
 
     mode = argv[1]
     input_file = argv[2]
 
     time = datetime.now().strftime("%d_%m_%Y@%H_%M")
-    for place in ["pack", "scatter"]:
-        for i in range(0, run_number):
-            log_folder=f"{time}/{i}_run"
-            file_count=0
-            num_processes = 2
-            while num_processes<=64:
-                if mode == "mpi" or mode == "all":
-                    run_mpi(num_processes, input_file, place, log_folder)
-                    file_count+=2
-                    sleep(10)
 
-                if mode == "omp" or mode == "all":
-                    run_omp(num_processes, input_file, place, log_folder)
-                    file_count+=2
-                    sleep(10)
-                
-                num_processes*=2    
-
-            print(f"Submitted {file_count/2} jobs with {place}. Waiting for completition.")
-            wait_completition(log_folder, file_count)
- 
+    # 1 CPU with cores from 2 to 64 using pack
+    submit_jobs(time, mode, input_file, 1, "pack", n_run, 64)
+    # 2 CPUs with cores from 2 to 32 using pack and scatter
+    submit_jobs(time, mode, input_file, 2, "pack", n_run, 32)
+    submit_jobs(time, mode, input_file, 2, "scatter", n_run, 32)
+    # 4 CPUs with cores from 2 to 32 using pack and scatter
+    submit_jobs(time, mode, input_file, 4, "pack", n_run, 32)
+    submit_jobs(time, mode, input_file, 4, "scatter", n_run, 32)
+    
     run_serial(input_file)   
 
 if __name__ == "__main__":

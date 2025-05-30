@@ -2,15 +2,16 @@
 # This script runs the OMP program on HPC with number of preocesses passed as input
 
 # Check if a parameter is passed
-if [ $# -lt 3 ]; then
-    echo "Usage: $0 <num_processes> <input_file> <placement> <log_folder>"
+if [ $# -lt 4 ]; then
+    echo "Usage: $0 <num_processes> <input_file> <cpus> <placement> <log_folder>"
     echo "Placement options: [pack, scatter]."
     exit 1
 fi
 
 num_processes="$1"
 input_file="$2"
-placement="$3"
+cpus="$3"
+placement="$4"
 log_folder="logs"
 
 if [ "$placement" != "pack" ] && [ "$placement" != "scatter" ]; then
@@ -18,14 +19,14 @@ if [ "$placement" != "pack" ] && [ "$placement" != "scatter" ]; then
     exit 1 
 fi
 
-if [ -z "$4" ]; then
+if [ -z "$5" ]; then
     log_folder="logs/"
     echo "Using default log folder: '$log_folder'"
 else
     # Remove any trailing slash from log_folder
     log_folder="${log_folder%/}"
     # Remove any leading/trailing slashes from input
-    input="${4#/}"
+    input="${5#/}"
     input="${input%/}"
     
     log_folder="$log_folder/$input/"
@@ -43,11 +44,11 @@ job_script=$(mktemp)
 
 cat <<EOF > "$job_script"
 #!/bin/bash
-#PBS -l select=2:ncpus=$num_processes:mem=64gb
+#PBS -l select=${cpus}:ncpus=$num_processes:mem=64gb
 #PBS -l place=${placement}:excl
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
-#PBS -N parallel_mst_${num_processes}_${placement}
+#PBS -N omp_mst${num_processes}_${placement}
 #PBS -o ${log_folder}omp_parallel_mst_${placement}.o${num_processes}
 #PBS -e ${log_folder}omp_parallel_mst_${placement}.e${num_processes}
 ${PWD}/build/bin/omp_mst "$input_file"

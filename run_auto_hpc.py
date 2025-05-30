@@ -29,7 +29,7 @@ def run_mpi(n_cores, input_file, cpus, place, log_folder):
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running MPI with {n_cores}_{place}.")
 
-def run_omp(n_cores, input_file, place, cpus, log_folder):
+def run_omp(n_cores, input_file, cpus, place, log_folder):
     cmd = f"./run_omp_hpc.sh {n_cores} {input_file} {cpus} {place} {log_folder}"
 
     os.system(cmd)

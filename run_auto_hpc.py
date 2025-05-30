@@ -19,7 +19,7 @@ def run_serial(input_file):
     os.system(cmd)
 
     time = datetime.now().strftime("%H:%M")
-    print(f"{time} Running SERIAL. Waiting completition...")
+    print(f"{time} Running SERIAL. ")
 
 def run_mpi(num_processes, input_file, place, log_folder):
     cmd = f"./run_mpi_hpc.sh {num_processes} {input_file} {place} {log_folder}"
@@ -27,14 +27,14 @@ def run_mpi(num_processes, input_file, place, log_folder):
     os.system(cmd)
 
     time = datetime.now().strftime("%H:%M")
-    print(f"{time} Running MPI with {num_processes}. Waiting completition...")
+    print(f"{time} Running MPI with {num_processes}_{place}.")
 
 def run_omp(num_processes, input_file, place, log_folder):
     cmd = f"./run_omp_hpc.sh {num_processes} {input_file} {place} {log_folder}"
 
     os.system(cmd)
     time = datetime.now().strftime("%H:%M")
-    print(f"{time} Running OMP with {num_processes}. Waiting completition...")
+    print(f"{time} Running OMP with {num_processes}_{place}")
 
 def run_script():
     if argv[1] not in ["mpi", "omp", "all"]:
@@ -58,15 +58,16 @@ def run_script():
                 if mode == "mpi" or mode == "all":
                     run_mpi(num_processes, input_file, place, log_folder)
                     file_count+=2
+                    sleep(10)
 
                 if mode == "omp" or mode == "all":
                     run_omp(num_processes, input_file, place, log_folder)
                     file_count+=2
+                    sleep(10)
                 
-                sleep(2)
-                    
-            num_processes*=2
+                num_processes*=2    
 
+            print(f"Submitted {file_count/2} jobs with {place}. Waiting for completition.")
             wait_completition(log_folder, file_count)
  
     run_serial(input_file)   

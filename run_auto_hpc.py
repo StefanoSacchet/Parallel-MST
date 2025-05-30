@@ -10,7 +10,7 @@ def wait_completition(log_folder, file_count):
 
     while current_files < wait_file:
         current_files = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
-        print(f"Found {current_files} files. Needs to reach ${wait_file}")
+        print(f"Found {current_files} files. Needs to reach {wait_file}.")
         sleep(40)
 
 def run_serial(input_file):
@@ -48,12 +48,12 @@ def run_script():
     mode = argv[1]
     input_file = argv[2]
 
-    num_processes = 2
     time = datetime.now().strftime("%d_%m_%Y@%H_%M")
     for place in ["pack", "scatter"]:
         for i in range(0, run_number):
             log_folder=f"{time}/{i}_run"
             file_count=0
+            num_processes = 2
             while num_processes<=64:
                 if mode == "mpi" or mode == "all":
                     run_mpi(num_processes, input_file, place, log_folder)

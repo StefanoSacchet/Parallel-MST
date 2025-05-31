@@ -10,14 +10,14 @@ def count_files(path):
 
 def wait_completition(log_folder, file_count):
     path = 'logs/' + log_folder
-    start_time = time.time()
+    start_time = time()
     timeout = 15 * 60  # 15 minutes in seconds
 
     current_files = count_files(path)
     wait_file = file_count + current_files
 
     while current_files < wait_file:
-        elapsed_time = time.time() - start_time
+        elapsed_time = time() - start_time
         if elapsed_time > timeout:
             print("Timeout reached after 15 minutes.")
             break
@@ -25,7 +25,7 @@ def wait_completition(log_folder, file_count):
         current_files = count_files(path)
         print(f"Found {current_files} files. Needs to reach {wait_file}.")
         print(f"To kill PID: {PID}")
-        time.sleep(60)
+        sleep(60)
 
 def run_serial(input_file):
     cmd = f"./run_serial.sh {input_file}"

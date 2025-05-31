@@ -1,17 +1,31 @@
 from sys import argv
 import os
-from time import sleep
+from time import sleep, time
 from datetime import datetime
+
+PID = os.getpid()
+
+def count_files(path):
+    return len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
 
 def wait_completition(log_folder, file_count):
     path = 'logs/' + log_folder
-    current_files = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+    start_time = time.time()
+    timeout = 15 * 60  # 15 minutes in seconds
+
+    current_files = count_files(path)
     wait_file = file_count + current_files
 
     while current_files < wait_file:
-        current_files = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+        elapsed_time = time.time() - start_time
+        if elapsed_time > timeout:
+            print("Timeout reached after 15 minutes.")
+            break
+
+        current_files = count_files(path)
         print(f"Found {current_files} files. Needs to reach {wait_file}.")
-        sleep(40)
+        print(f"To kill PID: {PID}")
+        time.sleep(60)
 
 def run_serial(input_file):
     cmd = f"./run_serial.sh {input_file}"
@@ -45,12 +59,12 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
             if mode == "mpi" or mode == "all":
                 run_mpi(n_cores, input_file, cpus, place, log_folder)
                 file_count+=2
-                sleep(10)
+                sleep(20)
 
             if mode == "omp" or mode == "all":
                 run_omp(n_cores, input_file, cpus, place, log_folder)
                 file_count+=2
-                sleep(10)
+                sleep(20)
 
             # TODO add hybrid
             

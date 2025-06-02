@@ -49,8 +49,8 @@ cat <<EOF > "$job_script"
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N mpi_mst${num_processes}_${placement}
-#PBS -o ${log_folder}mpi_parallel_mst_${placement}.o${num_processes}
-#PBS -e ${log_folder}mpi_parallel_mst_${placement}.e${num_processes}
+#PBS -o ${log_folder}mpi_parallel_mst_${placement}.o$((num_processes*cpus))
+#PBS -e ${log_folder}mpi_parallel_mst_${placement}.e$((num_processes*cpus))
 module load mpich-3.2
 mpirun.actual -n $num_processes ${PWD}/build/bin/mpi_mst "$input_file"
 EOF

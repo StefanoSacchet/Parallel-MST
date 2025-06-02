@@ -49,8 +49,8 @@ cat <<EOF > "$job_script"
 #PBS -l walltime=00:20:00
 #PBS -q short_cpuQ
 #PBS -N omp_mst${num_processes}_${placement}
-#PBS -o ${log_folder}omp_parallel_mst_${placement}.o${num_processes}
-#PBS -e ${log_folder}omp_parallel_mst_${placement}.e${num_processes}
+#PBS -o ${log_folder}omp_parallel_mst_${placement}.o$((num_processes*cpus))
+#PBS -e ${log_folder}omp_parallel_mst_${placement}.e$((num_processes*cpus))
 ${PWD}/build/bin/omp_mst "$input_file"
 EOF
 

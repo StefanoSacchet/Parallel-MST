@@ -54,7 +54,7 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
     for i in range(0, n_run):
         log_folder=f"{time}/{cpus}_cpu/{place}/{i}_run"
         file_count=0
-        n_cores = 2
+        n_cores = 1
         while n_cores<=max_cores:
             if mode == "mpi" or mode == "all":
                 run_mpi(n_cores, input_file, cpus, place, log_folder)
@@ -93,8 +93,8 @@ def run_script():
     submit_jobs(time, mode, input_file, 2, "pack", n_run, 32)
     submit_jobs(time, mode, input_file, 2, "scatter", n_run, 32)
     # 4 CPUs with cores from 2 to 32 using pack and scatter
-    submit_jobs(time, mode, input_file, 4, "pack", n_run, 32)
-    submit_jobs(time, mode, input_file, 4, "scatter", n_run, 32)
+    submit_jobs(time, mode, input_file, 4, "pack", n_run, 16)
+    submit_jobs(time, mode, input_file, 4, "scatter", n_run, 16)
     
     run_serial(input_file)   
 

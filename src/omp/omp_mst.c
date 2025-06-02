@@ -17,29 +17,22 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
   graph_size_t n_vertices = graph->V;
   Edge_t *edges = graph->edges;
 
-  Subset_t *subsets = (Subset_t *)malloc(n_vertices * sizeof(Subset_t));
-  if (subsets == NULL) {
-    fprintf(stderr, "Failed to allocate memory for subsets\n");
+  graph_size_t total_bytes = sizeof(Subset_t) * n_vertices +  // for subsets
+                             sizeof(Edge_t) * n_vertices +    // for cheapest
+                             sizeof(Edge_t) * n_vertices;     // for candidates
+
+  void *base_ptr = malloc(total_bytes);
+  if (base_ptr == NULL) {
+    fprintf(stderr, "Failed to allocate memory block\n");
     exit(EXIT_FAILURE);
   }
 
-  Edge_t *cheapest = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-  if (cheapest == NULL) {
-    fprintf(stderr, "Failed to allocate memory for cheapest edges\n");
-    free(subsets);
-    exit(EXIT_FAILURE);
-  }
+  Subset_t *subsets = (Subset_t *)base_ptr;
+  Edge_t *cheapest = (Edge_t *)((char *)base_ptr + sizeof(Subset_t) * n_vertices);
+  Edge_t *candidates = (Edge_t *)((char *)cheapest + sizeof(Edge_t) * n_vertices);
 
   graph_size_t edges_mst = 0;
-  graph_size_t old_edges_mst = 0;
   graph_size_t n_candidates = 0;
-  Edge_t *candidates = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-  if (candidates == NULL) {
-    fprintf(stderr, "Failed to allocate memory for candidates\n");
-    free(subsets);
-    free(cheapest);
-    exit(EXIT_FAILURE);
-  }
 
   // Initialize subsets in parallel
 #pragma omp simd
@@ -61,6 +54,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
       local_cheapest = (Edge_t *)malloc(n_vertices * num_threads * sizeof(Edge_t));
       if (local_cheapest == NULL) {
         fprintf(stderr, "Failed to allocate memory for thread-local edges\n");
+        free(base_ptr);
         exit(EXIT_FAILURE);
       }
     }
@@ -114,7 +108,6 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
     }
 
     // Collect valid candidates first
-    old_edges_mst = edges_mst;
     n_candidates = 0;
     for (graph_size_t i = 0; i < n_vertices; ++i) {
       if (cheapest[i].weight != -1) {
@@ -139,18 +132,10 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
         unionSets(subsets, from, to);
       }
     }
-
-    // If no new edges were added, the graph might be disconnected
-    if (old_edges_mst == edges_mst) {
-      break;
-    }
   }
 
   // Cleanup
-  free(candidates);
-  free(local_cheapest);
-  free(subsets);
-  free(cheapest);
+  free(base_ptr);
 }
 
 tot_mst_weight_t run_omp_mst(int argc, char *argv[]) {

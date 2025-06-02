@@ -14,16 +14,15 @@ def wait_completition(log_folder, file_count):
     timeout = 15 * 60  # 15 minutes in seconds
 
     current_files = count_files(path)
-    wait_file = file_count + current_files
 
-    while current_files < wait_file:
+    while current_files < file_count:
         elapsed_time = time() - start_time
         if elapsed_time > timeout:
             print("Timeout reached after 15 minutes.")
             break
 
         current_files = count_files(path)
-        print(f"Found {current_files} files. Needs to reach {wait_file}.")
+        print(f"Found {current_files} files. Needs to reach {file_count}.")
         print(f"To kill PID: {PID}")
         sleep(60)
 

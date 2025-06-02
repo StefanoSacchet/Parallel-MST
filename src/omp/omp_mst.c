@@ -31,6 +31,15 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
   }
 
   graph_size_t edges_mst = 0;
+  graph_size_t old_edges_mst = 0;
+  graph_size_t n_candidates = 0;
+  Edge_t *candidates = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
+  if (candidates == NULL) {
+    fprintf(stderr, "Failed to allocate memory for candidates\n");
+    free(subsets);
+    free(cheapest);
+    exit(EXIT_FAILURE);
+  }
 
   // Initialize subsets in parallel
 #pragma omp simd
@@ -104,13 +113,9 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
       }
     }
 
-    // Optimize the union-find operations by reducing contention
-    // Process edges in batches
-    graph_size_t old_edges_mst = edges_mst;
-    Edge_t *candidates = (Edge_t *)malloc(n_vertices * sizeof(Edge_t));
-    graph_size_t n_candidates = 0;
-
     // Collect valid candidates first
+    old_edges_mst = edges_mst;
+    n_candidates = 0;
     for (graph_size_t i = 0; i < n_vertices; ++i) {
       if (cheapest[i].weight != -1) {
         Edge_t edge = cheapest[i];
@@ -123,14 +128,7 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
       }
     }
 
-// Sort candidates by weight to prioritize lighter edges
-#pragma omp parallel
-    {
-#pragma omp single
-      qsort(candidates, n_candidates, sizeof(Edge_t), compare_edges);
-    }
-
-    // Process candidates sequentially to avoid race conditions in union-find
+    // Process candidates sequentially to avoid race conditions
     for (graph_size_t i = 0; i < n_candidates && edges_mst < n_vertices - 1; ++i) {
       Edge_t edge = candidates[i];
       graph_size_t from = find(subsets, edge.src);
@@ -142,16 +140,14 @@ void omp_mst(Graph_t *graph, Graph_t *mst) {
       }
     }
 
-    free(candidates);
-
-    // If no new edges were added, it might be stuck
+    // If no new edges were added, the graph might be disconnected
     if (old_edges_mst == edges_mst) {
-      // The graph might be disconnected
       break;
     }
   }
 
   // Cleanup
+  free(candidates);
   free(local_cheapest);
   free(subsets);
   free(cheapest);

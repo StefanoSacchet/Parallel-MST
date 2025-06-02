@@ -176,7 +176,7 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
     }
 
 // Merge thread-local cheapest into global `cheapest`
-#pragma simd
+#pragma omp simd
     for (graph_size_t v = 0; v < n_vertices; ++v) {
       cheapest[v].weight = -1;
     }
@@ -237,7 +237,7 @@ void hybrid_mst(Graph_t *graph, Graph_t *mst) {
   }
 
 // Free temporary buffers
-#pragma simd
+#pragma omp simd
   for (int t = 0; t < num_threads; ++t) {
     free(cheapest_local[t]);
   }
@@ -301,7 +301,7 @@ tot_mst_weight_t run_hybrid_mst(int argc, char *argv[]) {
     if (!HPC) {
       printf("Total time: %f\n", total_time);
       printf("Total weight of MST: %" PRIu64 "\n", mst_weight);
-      log_result("mpi", file_name, size, total_time);
+      log_result("hybrid", file_name, size, total_time);
     }
 
     // Free graph memory

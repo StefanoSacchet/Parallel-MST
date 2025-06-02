@@ -50,6 +50,13 @@ def run_omp(n_cores, input_file, cpus, place, log_folder):
     time = datetime.now().strftime("%H:%M")
     print(f"{time} Running OMP with {n_cores}_{place}")
 
+def run_hybrid(n_cores, input_file, cpus, place, log_folder):
+    cmd = f"./run_hybrid_hpc.sh {n_cores} {input_file} {cpus} {place} {log_folder}"
+
+    os.system(cmd)
+    time = datetime.now().strftime("%H:%M")
+    print(f"{time} Running HYBRID with {n_cores}_{place}")
+
 def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
     for i in range(0, n_run):
         log_folder=f"{time}/{cpus}_cpu/{place}/{i}_run"
@@ -66,7 +73,10 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
                 file_count+=2
                 sleep(20)
 
-            # TODO add hybrid
+            if mode == "hybrid" or mode == "all":
+                run_hybrid(n_cores, input_file, cpus, place, log_folder)
+                file_count+=2
+                sleep(20)
             
             n_cores*=2
 
@@ -74,8 +84,8 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
         wait_completition(log_folder, file_count)
 
 def run_script():
-    if argv[1] not in ["mpi", "omp", "all"]:
-        print("Found non existing mode. Use 'mpi', 'omp' or 'all'")
+    if argv[1] not in ["mpi", "omp", "hybrid", "all"]:
+        print("Found non existing mode. Use 'mpi', 'omp', 'hybrid' or 'all'")
         exit(1)
 
     n_run=1
@@ -100,7 +110,7 @@ def run_script():
 
 if __name__ == "__main__":
     if len(argv) < 3:
-        print("Usage: python3 run_auto.py <[mpi, omp, all]> <input_file> <runs_number>")
+        print("Usage: python3 run_auto.py <[mpi, omp, hybrid, all]> <input_file> <runs_number>")
         exit(1)
 
     run_script()

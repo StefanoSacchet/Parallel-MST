@@ -1,7 +1,7 @@
-from sys import argv
 import os
 from time import sleep, time
 from datetime import datetime
+import argparse
 
 PID = os.getpid()
 
@@ -82,34 +82,36 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
         print(f"Submitted {file_count/2} jobs with {place}. Waiting for completition.")
         wait_completition(log_folder, file_count)
 
-def run_script():
-    if argv[1] not in ["mpi", "omp", "hybrid", "all"]:
-        print("Found non existing mode. Use 'mpi', 'omp', 'hybrid' or 'all'")
-        exit(1)
+DEFAULT_INPUT_FILES = ["generated/1k25k.txt", "generated/1k310k.txt", "generated/80k65m.txt", "generated/80k2b.txt", "generated/500k1b.txt"] 
 
-    n_run=1
-    if len(argv) == 4:
-        n_run=int(argv[3])
+def run_script(mode, input_files, n_run):
 
-    mode = argv[1]
-    input_file = argv[2]
+    for input_file in input_files:
+        path = "./dataset/"+input_file
+        if not os.path.isfile(path):
+            print(f"File not exists at '{path}'. Skipped.")
+            continue
+        
+        print(f"Using file at '{path}'.")
 
-    time = datetime.now().strftime("%d_%m_%Y@%H_%M")
+        time = datetime.now().strftime("%d_%m_%Y@%H_%M")
+        # 1 CPU with cores from 2 to 64 using pack
+        submit_jobs(time, mode, input_file, 1, "pack", n_run, 64)
+        # 2 CPUs with cores from 2 to 32 using pack and scatter
+        submit_jobs(time, mode, input_file, 2, "pack", n_run, 32)
+        submit_jobs(time, mode, input_file, 2, "scatter", n_run, 32)
+        # 4 CPUs with cores from 2 to 32 using pack and scatter
+        submit_jobs(time, mode, input_file, 4, "pack", n_run, 16)
+        submit_jobs(time, mode, input_file, 4, "scatter", n_run, 16)
 
-    # 1 CPU with cores from 2 to 64 using pack
-    submit_jobs(time, mode, input_file, 1, "pack", n_run, 64)
-    # 2 CPUs with cores from 2 to 32 using pack and scatter
-    submit_jobs(time, mode, input_file, 2, "pack", n_run, 32)
-    submit_jobs(time, mode, input_file, 2, "scatter", n_run, 32)
-    # 4 CPUs with cores from 2 to 32 using pack and scatter
-    submit_jobs(time, mode, input_file, 4, "pack", n_run, 16)
-    submit_jobs(time, mode, input_file, 4, "scatter", n_run, 16)
-    
-    run_serial(input_file)   
+        # run_serial(input_file)
 
 if __name__ == "__main__":
-    if len(argv) < 3:
-        print("Usage: python3 run_auto.py <[mpi, omp, hybrid, all]> <input_file> <runs_number>")
-        exit(1)
+    parser = argparse.ArgumentParser(description="Run benchmark automation.")
+    parser.add_argument("mode", choices=["mpi", "omp", "hybrid", "all"], help="Execution mode")
+    parser.add_argument("--input", nargs="+", default=DEFAULT_INPUT_FILES, help="Input file(s)")
+    parser.add_argument("--runs", type=int, default=1, help="Number of runs")
 
-    run_script()
+    args = parser.parse_args()
+
+    run_script(args.mode, args.input, args.runs)

@@ -46,7 +46,7 @@ cat <<EOF > "$job_script"
 #!/bin/bash
 #PBS -l select=${cpus}:ncpus=$num_processes:mem=64gb 
 #PBS -l place=${placement}:excl
-#PBS -l walltime=00:20:00
+#PBS -l walltime=01:00:00
 #PBS -q short_cpuQ
 #PBS -N hyd_mst${num_processes}_${placement}
 #PBS -o ${log_folder}hybrid_parallel_mst_${placement}.o$((num_processes*cpus))

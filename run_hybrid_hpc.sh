@@ -36,7 +36,7 @@ fi
 mkdir -p $log_folder
 source load_modules.sh
 echo "Building release HYBRID..."
-make clean
+# make clean
 make release-hpc RUN_TYPE=HYBRID
 
 # Create a temporary PBS script

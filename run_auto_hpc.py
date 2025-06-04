@@ -106,6 +106,8 @@ def run_script(mode, input_files, n_run):
 
         # run_serial(input_file)
 
+    print("---- AUTO RUN SCRIPT TERMINATED ----")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run benchmark automation.")
     parser.add_argument("mode", choices=["mpi", "omp", "hybrid", "all"], help="Execution mode")

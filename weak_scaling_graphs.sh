@@ -2,13 +2,14 @@
 
 # THIS SCRIPT GENERATES GRAPHS OF INCREMENTAL SIZE USING HPC CLUSTER
 # VERTICES: 25K
-# EDGES: 100K UP TO 800K
+# EDGES: 200K UP TO 1.6M
 
 vertices=25000
-edges=100000
+edges=200000
 
 mkdir -p "dataset/generated/"
 
+source load_modules.sh
 make release RUN_TYPE=GRAPH_GEN
 
 generate_and_submit_pbs_script() {

@@ -49,17 +49,17 @@ def find_data_folders(base_dir, specific_folders=None):
     
     return sorted(data_folders)
 
-def get_cpu_configurations(data_folder):
-    """Get all CPU configurations (1_cpu, 2_cpu, 4_cpu, etc.) from a data folder."""
-    cpu_configs = []
+def get_nodes_configurations(data_folder):
+    """Get all NODEs configurations (1_node, 2_node, 4_node, etc.) from a data folder."""
+    node_configs = []
     for item in os.listdir(data_folder):
         item_path = os.path.join(data_folder, item)
-        if os.path.isdir(item_path) and item.endswith('_cpu'):
-            cpu_configs.append(item_path)
-    return sorted(cpu_configs, key=lambda x: int(os.path.basename(x).split('_')[0]))
+        if os.path.isdir(item_path) and item.endswith('_node'):
+            node_configs.append(item_path)
+    return sorted(node_configs, key=lambda x: int(os.path.basename(x).split('_')[0]))
 
 def get_strategies(cpu_config_path):
-    """Get all strategies (pack, scatter) from a CPU configuration folder."""
+    """Get all strategies (pack, scatter) from a NODEs configuration folder."""
     strategies = []
     for item in os.listdir(cpu_config_path):
         item_path = os.path.join(cpu_config_path, item)
@@ -116,8 +116,8 @@ def extract_impl_and_processes_from_filename(filename):
     return None, None, None
 
 def collect_all_data(base_dir, specific_folders=None):
-    """Collect data from all folders and organize by CPU config, strategy, and implementation type."""
-    # Structure: [data_folder][cpu_config][strategy][impl_type][config_key] = [run_data]
+    """Collect data from all folders and organize by NODEs config, strategy, and implementation type."""
+    # Structure: [data_folder][node_config][strategy][impl_type][config_key] = [run_data]
     all_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
     
     data_folders = find_data_folders(base_dir, specific_folders)
@@ -131,19 +131,19 @@ def collect_all_data(base_dir, specific_folders=None):
     print(f"Found {len(data_folders)} data folders: {[os.path.basename(f) for f in data_folders]}")
     
     for data_folder in data_folders:
-        cpu_configs = get_cpu_configurations(data_folder)
-        if not cpu_configs:
-            print(f"No CPU configuration folders found in {data_folder}")
+        node_configs = get_nodes_configurations(data_folder)
+        if not node_configs:
+            print(f"No NODEs configuration folders found in {data_folder}")
             continue
             
-        print(f"Processing {len(cpu_configs)} CPU configurations in {os.path.basename(data_folder)}")
+        print(f"Processing {len(node_configs)} NODEs configurations in {os.path.basename(data_folder)}")
         
-        for cpu_config_path in cpu_configs:
-            cpu_config = os.path.basename(cpu_config_path)
+        for cpu_config_path in node_configs:
+            node_config = os.path.basename(cpu_config_path)
             strategies = get_strategies(cpu_config_path)
             
-            print(f"  CPU Config {cpu_config}: found {len(strategies)} strategies")
-            n_cpus = int(cpu_config.split('_')[0])
+            print(f"  NODEs Config {node_config}: found {len(strategies)} strategies")
+            n_cpus = int(node_config.split('_')[0])
             print(f"n cpus {n_cpus}")
             
             for strategy_path in strategies:
@@ -194,14 +194,14 @@ def collect_all_data(base_dir, specific_folders=None):
                             # Create a unique key for this configuration
                             config_key = (data['algorithm'], data['file_name'], data['num_processes'])
                             
-                            # Add CPU config and strategy info to data
-                            data['cpu_config'] = cpu_config
+                            # Add NODEs config and strategy info to data
+                            data['node_config'] = node_config
                             data['strategy'] = strategy
                             data['data_folder'] = os.path.basename(data_folder)
                             
-                            all_data[data_folder][cpu_config][strategy][impl_type][config_key].append(data)
+                            all_data[data_folder][node_config][strategy][impl_type][config_key].append(data)
                             
-                            print(f"        Added: {impl_type} {cpu_config} {strategy} "
+                            print(f"        Added: {impl_type} {node_config} {strategy} "
                                   f"{data['file_name']} {data['num_processes']}p {data['time']:.3f}s")
                         else:
                             print(f"        Could not read data from {os.path.basename(file_path)}")
@@ -232,7 +232,7 @@ def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
     for data_folder, cpu_data in all_data.items():
         folder_name = os.path.basename(data_folder)
         
-        for cpu_config, strategy_data in cpu_data.items():
+        for node_config, strategy_data in cpu_data.items():
             for strategy, impl_data in strategy_data.items():
                 for impl_type, configs in impl_data.items():
                     if impl_type == 'SERIAL':
@@ -249,7 +249,7 @@ def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
                         best_run = min(runs, key=lambda x: x['time'])
                         
                         # Key for grouping results
-                        group_key = (impl_type, cpu_config, strategy, file_name, num_processes)
+                        group_key = (impl_type, node_config, strategy, file_name, num_processes)
                         
                         if group_key not in config_minimums or min_time < config_minimums[group_key]['Time']:
                             speedup = global_baseline / min_time
@@ -258,7 +258,7 @@ def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
                             config_minimums[group_key] = {
                                 'data_folder': folder_name,
                                 'implementation': impl_type,
-                                'cpu_config': cpu_config,
+                                'node_config': node_config,
                                 'strategy': strategy,
                                 'algorithm': best_run['algorithm'],
                                 'file_name': file_name,
@@ -286,32 +286,25 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
         'HYBRID': '#2ca02c'  # Green
     }
     
-    # Define markers for CPU configurations
+    # Define markers for NODEs configurations
     cpu_markers = {
-        '1_cpu': 'o',   # Circle
-        '2_cpu': 's',   # Square
-        '4_cpu': '^'    # Triangle
+        '1_node': 'o',   # Circle
+        '2_node': 's',   # Square
+        '4_node': '^'    # Triangle
     }
     
-    # Define mapping from CPU config to node labels
-    cpu_to_node_label = {
-        '1_cpu': '1 node',
-        '2_cpu': '2 nodes', 
-        '4_cpu': '3 nodes'
-    }
-    
-    # Filter data to only include the implementations and CPU configs we want
+    # Filter data to only include the implementations and NODEs configs we want
     target_impls = ['MPI', 'OMP', 'HYBRID']
-    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    target_cpus = ['1_node', '2_node', '4_node']
     
     filtered_df = df[
         (df['implementation'].isin(target_impls)) & 
-        (df['cpu_config'].isin(target_cpus))
+        (df['node_config'].isin(target_cpus))
     ]
     
     print(f"Filtered data: {len(filtered_df)} rows from {len(df)} total rows")
     print(f"Implementations: {sorted(filtered_df['implementation'].unique())}")
-    print(f"CPU configs: {sorted(filtered_df['cpu_config'].unique())}")
+    print(f"NODEs configs: {sorted(filtered_df['node_config'].unique())}")
     print(f"Strategies: {sorted(filtered_df['strategy'].unique())}")
     
     # Create the 6 combined plots
@@ -337,9 +330,9 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
                 if len(impl_data) == 0:
                     continue
                 
-                # Plot each CPU configuration with different markers
-                for cpu_config in target_cpus:
-                    cpu_data = impl_data[impl_data['cpu_config'] == cpu_config]
+                # Plot each NODEs configuration with different markers
+                for node_config in target_cpus:
+                    cpu_data = impl_data[impl_data['node_config'] == node_config]
                     
                     if len(cpu_data) == 0:
                         continue
@@ -351,13 +344,13 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
                         cpu_data['num_processes'], 
                         cpu_data[metric],
                         color=impl_colors[impl],
-                        marker=cpu_markers[cpu_config],
+                        marker=cpu_markers[node_config],
                         markersize=8,
                         linewidth=2,
-                        label=f"{impl} - {cpu_config}",
+                        label=f"{impl} - {node_config}",
                         linestyle='-' if impl == 'MPI' else '--' if impl == 'OMP' else '-.'
                     )            
-            plt.title(f'{metric} Comparison - {strategy.upper()} Strategy\n(MPI, OMP, HYBRID - 1, 2, 4 CPU)', 
+            plt.title(f'{metric} Comparison - {strategy.upper()} Strategy\n(MPI, OMP, HYBRID - 1, 2, 4 NODEs)', 
                      fontsize=14, fontweight='bold')
             plt.xlabel('Number of Processes', fontsize=12)
             plt.ylabel(ylabel, fontsize=12)
@@ -387,11 +380,11 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
     plt.rcParams['figure.dpi'] = 300
     plt.rcParams['font.size'] = 12
     
-    # Define colors for CPU configurations (different from implementation colors)
+    # Define colors for NODEs configurations (different from implementation colors)
     cpu_colors = {
-        '1_cpu': '#e74c3c',   # Red
-        '2_cpu': '#3498db',   # Blue
-        '4_cpu': '#2ecc71'    # Green
+        '1_node': '#e74c3c',   # Red
+        '2_node': '#3498db',   # Blue
+        '4_node': '#2ecc71'    # Green
     }
     
     # Define markers for strategies
@@ -402,11 +395,11 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
     
     # Filter data
     target_impls = ['MPI', 'OMP', 'HYBRID']
-    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    target_cpus = ['1_node', '2_node', '4_node']
     
     filtered_df = df[
         (df['implementation'].isin(target_impls)) & 
-        (df['cpu_config'].isin(target_cpus))
+        (df['node_config'].isin(target_cpus))
     ]
     
     print(f"\nCreating separated plots for each implementation...")
@@ -427,15 +420,15 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
         for metric, ylabel in metrics:
             plt.figure(figsize=(14, 8))
             
-            # Plot each strategy and CPU configuration
+            # Plot each strategy and NODEs configuration
             for strategy in strategies:
                 strategy_data = impl_data[impl_data['strategy'] == strategy]
                 
                 if len(strategy_data) == 0:
                     continue
                 
-                for cpu_config in target_cpus:
-                    cpu_data = strategy_data[strategy_data['cpu_config'] == cpu_config]
+                for node_config in target_cpus:
+                    cpu_data = strategy_data[strategy_data['node_config'] == node_config]
                     
                     if len(cpu_data) == 0:
                         continue
@@ -446,15 +439,15 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
                     plt.plot(
                         cpu_data['num_processes'], 
                         cpu_data[metric],
-                        color=cpu_colors[cpu_config],
+                        color=cpu_colors[node_config],
                         marker=strategy_markers[strategy],
                         markersize=8,
                         linewidth=2,
-                        label=f"{cpu_config} - {strategy}",
+                        label=f"{node_config} - {strategy}",
                         linestyle='-' if strategy == 'pack' else '--'
                     )   
                              
-            plt.title(f'{metric} Analysis - {impl} Implementation\n(Pack vs Scatter - 1, 2, 4 CPU)', 
+            plt.title(f'{metric} Analysis - {impl} Implementation\n(Pack vs Scatter - 1, 2, 4 NODEs)', 
                      fontsize=14, fontweight='bold')
             plt.xlabel('Number of Processes', fontsize=12)
             plt.ylabel(ylabel, fontsize=12)
@@ -491,11 +484,11 @@ def create_focused_plots(df: pd.DataFrame, graph_name, log_dir: str = "logs"):
     # Create summary tables for each strategy
     strategies = ['pack', 'scatter']
     target_impls = ['MPI', 'OMP', 'HYBRID']
-    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    target_cpus = ['1_node', '2_node', '4_node']
     
     filtered_df = df[
         (df['implementation'].isin(target_impls)) & 
-        (df['cpu_config'].isin(target_cpus))
+        (df['node_config'].isin(target_cpus))
     ]
     
     for strategy in strategies:
@@ -506,7 +499,7 @@ def create_focused_plots(df: pd.DataFrame, graph_name, log_dir: str = "logs"):
         
         # Create summary table
         summary_table = strategy_data.pivot_table(
-            index=['implementation', 'cpu_config'],
+            index=['implementation', 'node_config'],
             columns='num_processes',
             values=['Time', 'Speedup', 'Efficiency'],
             aggfunc='first'
@@ -544,8 +537,8 @@ def create_focused_plots(df: pd.DataFrame, graph_name, log_dir: str = "logs"):
             best_speedup = impl_data.loc[impl_data['Speedup'].idxmax()]
             
             print(f"  {impl}:")
-            print(f"    Best Time: {best_time['Time']:.3f}s ({best_time['cpu_config']}, {best_time['num_processes']} proc)")
-            print(f"    Best Speedup: {best_speedup['Speedup']:.2f}x ({best_speedup['cpu_config']}, {best_speedup['num_processes']} proc)")
+            print(f"    Best Time: {best_time['Time']:.3f}s ({best_time['node_config']}, {best_time['num_processes']} proc)")
+            print(f"    Best Speedup: {best_speedup['Speedup']:.2f}x ({best_speedup['node_config']}, {best_speedup['num_processes']} proc)")
             print(f"    Best Efficiency: {best_speedup['Efficiency']:.3f}")
     
     print(f"\nGenerated plots:")
@@ -580,7 +573,8 @@ def plot_focused_analysis(base_dir, specific_folders=None):
                             for d2 in d1.values()
                             for d3 in d2.values()
                             for d4 in d3.values()
-                            for k in d4.keys())).split('/')[1].split('.')[0]
+                            for k in d4.keys()))
+    graph_name = os.path.splitext(os.path.basename(graph_name))[0]
 
     min_data = get_minimum_times_by_configuration(base_dir, all_data, graph_name)
     if not min_data:
@@ -590,7 +584,7 @@ def plot_focused_analysis(base_dir, specific_folders=None):
     df = pd.DataFrame(min_data)
     print(f"Created dataframe with {len(df)} rows")
     print(f"Data folders: {df['data_folder'].unique()}")
-    print(f"CPU configurations: {df['cpu_config'].unique()}")
+    print(f"NODEs configurations: {df['node_config'].unique()}")
     print(f"Strategies: {df['strategy'].unique()}")
     print(f"Implementations: {df['implementation'].unique()}")
     print(f"Files: {df['file_name'].unique()}")
@@ -638,11 +632,11 @@ if __name__ == "__main__":
         print("    - Time, Speedup, Efficiency for Pack strategy")
         print("    - Time, Speedup, Efficiency for Scatter strategy")
         print("    - Each plot shows MPI, OMP, HYBRID implementations together")
-        print("    - Each plot shows 1, 2, 4 CPU configurations")
+        print("    - Each plot shows 1, 2, 4 NODEs configurations")
         print("  SEPARATED PLOTS (9 total):")
         print("    - Time, Speedup, Efficiency for each implementation (MPI, OMP, HYBRID)")
         print("    - Each plot shows Pack vs Scatter strategies")
-        print("    - Each plot shows 1, 2, 4 CPU configurations")
+        print("    - Each plot shows 1, 2, 4 NODEs configurations")
         print("")
         print("Usage: python3 enhanced_plotter.py [options] [folder1] [folder2] ...")
         print("Options:")

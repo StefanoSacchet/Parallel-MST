@@ -58,7 +58,7 @@ def run_hybrid(n_cores, input_file, cpus, place, log_folder):
 
 def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
     for i in range(0, n_run):
-        log_folder=f"{time}/{cpus}_cpu/{place}/{i}_run"
+        log_folder=f"{time}/{cpus}_node/{place}/{i}_run"
         file_count=0
         n_cores = 1
         while n_cores<=max_cores:
@@ -82,7 +82,7 @@ def submit_jobs(time, mode, input_file, cpus, place, n_run, max_cores):
         print(f"Submitted {file_count/2} jobs with {place}. Waiting for completition.")
         wait_completition(log_folder, file_count)
 
-DEFAULT_INPUT_FILES = ["generated/1k25k.txt", "generated/1k310k.txt", "generated/80k65m.txt", "generated/80k2b.txt", "generated/500k1b.txt"] 
+DEFAULT_INPUT_FILES = ["generated/10k45m.txt", "generated/80k65m.txt", "generated/80k2b.txt", "generated/500k1b.txt"]
 
 def run_script(mode, input_files, n_run):
 

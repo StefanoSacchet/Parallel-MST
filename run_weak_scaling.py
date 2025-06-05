@@ -59,4 +59,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    run_script(args.mode, args.input, args.runs)
+    run_script(args.mode, args.input)

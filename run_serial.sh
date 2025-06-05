@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check if input file is passed
-if [ $# -lt 1 ]; then
+if [ $# -lt 2 ]; then
     echo "Usage: $0 <input_file> <output_name> <optional_log_folder>"
     exit 1
 fi

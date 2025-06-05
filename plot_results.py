@@ -7,11 +7,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-COMBINED_FILE = "combined_plot.png"
-SPEEDUP_FILE = "speedup_plot.png"
-EFF_FILE = "efficiency_plot.png"
-
 def read_base_time(serial_file):
+    """Read the baseline serial time from serial file."""
     try:
         with open(serial_file, "r") as f:
             line = f.readline().strip()
@@ -25,7 +22,6 @@ def read_base_time(serial_file):
     except Exception as e:
         print(f"Error reading base time: {e}")
     return None
-
 
 def find_data_folders(base_dir, specific_folders=None):
     """Find data@time folders in the base directory."""
@@ -48,21 +44,37 @@ def find_data_folders(base_dir, specific_folders=None):
         # Auto-discover all data@time folders
         for item in os.listdir(base_dir):
             item_path = os.path.join(base_dir, item)
-            if os.path.isdir(item_path) and ('@' in item):  # More flexible pattern matching
+            if os.path.isdir(item_path) and ('@' in item):
                 data_folders.append(item_path)
     
     return sorted(data_folders)
 
-
-def get_run_folders(data_folder):
-    """Get all run folders (0_run, 1_run, ..., n_run) from a data folder."""
-    run_folders = []
+def get_cpu_configurations(data_folder):
+    """Get all CPU configurations (1_cpu, 2_cpu, 4_cpu, etc.) from a data folder."""
+    cpu_configs = []
     for item in os.listdir(data_folder):
         item_path = os.path.join(data_folder, item)
+        if os.path.isdir(item_path) and item.endswith('_cpu'):
+            cpu_configs.append(item_path)
+    return sorted(cpu_configs, key=lambda x: int(os.path.basename(x).split('_')[0]))
+
+def get_strategies(cpu_config_path):
+    """Get all strategies (pack, scatter) from a CPU configuration folder."""
+    strategies = []
+    for item in os.listdir(cpu_config_path):
+        item_path = os.path.join(cpu_config_path, item)
+        if os.path.isdir(item_path) and item in ['pack', 'scatter']:
+            strategies.append(item_path)
+    return sorted(strategies)
+
+def get_run_folders(strategy_path):
+    """Get all run folders (run_1, run_2, etc.) from a strategy folder."""
+    run_folders = []
+    for item in os.listdir(strategy_path):
+        item_path = os.path.join(strategy_path, item)
         if os.path.isdir(item_path) and item.endswith('_run'):
             run_folders.append(item_path)
     return sorted(run_folders)
-
 
 def read_file_data(file_path):
     """Read data from a single output file."""
@@ -79,29 +91,34 @@ def read_file_data(file_path):
                         'num_processes': int(num_processes),
                         'time': float(time)
                     }
+            else:
+                print(f"[WARNING] No line found. Possible empty file at '{file_path}'")
     except (FileNotFoundError, ValueError, IndexError) as e:
         print(f"Error reading file {file_path}: {e}")
     return None
 
-
 def extract_impl_and_processes_from_filename(filename):
-    """Extract implementation type and number of processes from filename like 'omp_parallel_mst.o4'"""
+    """Extract implementation type and number of processes from filename."""
     basename = os.path.basename(filename)
-    if '_parallel_mst.o' in basename:
-        parts = basename.split('_parallel_mst.o')
-        impl_type = parts[0].upper()  # Convert to uppercase for consistency
-        try:
-            num_processes = int(parts[1])
-            return impl_type, num_processes
-        except ValueError:
-            return None, None
-    return None, None
-
+    
+    # Handle both pack and scatter strategies
+    for strategy in ['pack', 'scatter']:
+        pattern = f'_parallel_mst_{strategy}.o'
+        if pattern in basename:
+            parts = basename.split(pattern)
+            impl_type = parts[0].upper()  # Convert to uppercase for consistency
+            try:
+                num_processes = int(parts[1])
+                return impl_type, num_processes, strategy
+            except ValueError:
+                return None, None, None
+    
+    return None, None, None
 
 def collect_all_data(base_dir, specific_folders=None):
-    """Collect data from all folders and organize by implementation type."""
-    # Structure: [data_folder][impl_type][file_pattern][run_folder] = data
-    all_data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    """Collect data from all folders and organize by CPU config, strategy, and implementation type."""
+    # Structure: [data_folder][cpu_config][strategy][impl_type][config_key] = [run_data]
+    all_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
     
     data_folders = find_data_folders(base_dir, specific_folders)
     if not data_folders:
@@ -114,261 +131,475 @@ def collect_all_data(base_dir, specific_folders=None):
     print(f"Found {len(data_folders)} data folders: {[os.path.basename(f) for f in data_folders]}")
     
     for data_folder in data_folders:
-        run_folders = get_run_folders(data_folder)
-        if not run_folders:
-            print(f"No run folders found in {data_folder}")
+        cpu_configs = get_cpu_configurations(data_folder)
+        if not cpu_configs:
+            print(f"No CPU configuration folders found in {data_folder}")
             continue
             
-        print(f"Processing {len(run_folders)} run folders in {os.path.basename(data_folder)}")
+        print(f"Processing {len(cpu_configs)} CPU configurations in {os.path.basename(data_folder)}")
         
-        # Look for all implementation files
-        for run_folder in run_folders:
-            run_folder_name = os.path.basename(run_folder)
-            # Find all files matching *_parallel_mst.o* pattern
-            pattern = "*_parallel_mst.o*"
-            files = glob.glob(os.path.join(run_folder, pattern))
-            print(f"  Found {len(files)} files in {run_folder_name}: {[os.path.basename(f) for f in files]}")
+        for cpu_config_path in cpu_configs:
+            cpu_config = os.path.basename(cpu_config_path)
+            strategies = get_strategies(cpu_config_path)
             
-            for file_path in files:
-                impl_type, file_processes = extract_impl_and_processes_from_filename(file_path)
-                if impl_type is None:
-                    print(f"    Could not parse implementation from {os.path.basename(file_path)}")
-                    continue
+            print(f"  CPU Config {cpu_config}: found {len(strategies)} strategies")
+            n_cpus = int(cpu_config.split('_')[0])
+            print(f"n cpus {n_cpus}")
+            
+            for strategy_path in strategies:
+                strategy = os.path.basename(strategy_path)
+                run_folders = get_run_folders(strategy_path)
+                
+                print(f"    Strategy {strategy}: found {len(run_folders)} run folders")
+                
+                for run_folder in run_folders:
+                    run_folder_name = os.path.basename(run_folder)
                     
-                data = read_file_data(file_path)
-                if data:
-                    # Verify consistency between filename and file content
-                    if file_processes != data['num_processes']:
-                        print(f"Warning: Process count mismatch in {file_path}: "
-                              f"filename suggests {file_processes}, content says {data['num_processes']}")
+                    # Find all files matching parallel MST patterns
+                    implementation_patterns = [
+                        "*_parallel_mst_pack.o*",
+                        "*_parallel_mst_scatter.o*"
+                    ]
                     
-                    print(f"    Added data: {impl_type} {data['file_name']} {data['num_processes']}p {data['time']:.3f}s from {run_folder_name}")
+                    all_files = []
+                    for pattern in implementation_patterns:
+                        files = glob.glob(os.path.join(run_folder, pattern))
+                        all_files.extend(files)
                     
-                    # Create a unique key for this configuration
-                    config_key = (data['algorithm'], data['file_name'], data['num_processes'])
-                    all_data[data_folder][impl_type][config_key].append(data)
-                else:
-                    print(f"    Could not read data from {os.path.basename(file_path)}")
+                    if all_files:
+                        print(f"      {run_folder_name}: found {len(all_files)} files")
+                    
+                    for file_path in all_files:
+                        impl_type, file_processes, file_strategy = extract_impl_and_processes_from_filename(file_path)
+                        
+                        if impl_type is None:
+                            print(f"        Could not parse implementation from {os.path.basename(file_path)}")
+                            continue
+                        
+                        # Verify strategy consistency
+                        if file_strategy != strategy:
+                            print(f"        Strategy mismatch: folder={strategy}, file={file_strategy}")
+                            continue
+                            
+                        data = read_file_data(file_path)
+                        if data:
+                            data['num_processes'] *= n_cpus
+                            # Verify consistency between filename and file content
+                            if file_processes != data['num_processes']:
+                                print(f"        Process count mismatch in {os.path.basename(file_path)}: "
+                                      f"filename={file_processes}, content={data['num_processes']}")
+                            
+                            # Create a unique key for this configuration
+                            config_key = (data['algorithm'], data['file_name'], data['num_processes'])
+                            
+                            # Add CPU config and strategy info to data
+                            data['cpu_config'] = cpu_config
+                            data['strategy'] = strategy
+                            data['data_folder'] = os.path.basename(data_folder)
+                            
+                            all_data[data_folder][cpu_config][strategy][impl_type][config_key].append(data)
+                            
+                            print(f"        Added: {impl_type} {cpu_config} {strategy} "
+                                  f"{data['file_name']} {data['num_processes']}p {data['time']:.3f}s")
+                        else:
+                            print(f"        Could not read data from {os.path.basename(file_path)}")
     
     return all_data
 
-
-def get_minimum_times_by_implementation(base_dir, all_data):
-    """Get minimum times for each implementation separately."""
-
-    serial_file = os.path.join(base_dir, "serial_parallel_mst.o1")
+def get_global_baseline(base_dir, graph_name):
+    # Look for serial file in base directory
+    serial_file = os.path.join(base_dir, f"serial_{graph_name}.o1")
     global_baseline = read_base_time(serial_file)
+    
+    print(f"Found global baseline time: {global_baseline:.3f}s at '{serial_file}'")
 
+    return global_baseline
+
+def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
+    """Get minimum times for each configuration separately."""
+    
+    global_baseline = get_global_baseline(base_dir, graph_name)
+                        
     if global_baseline is None:
         print("Cannot calculate speedup/efficiency: base time not available.")
-        return
-    
-    print(f"Using global baseline time: {global_baseline:.3f}s")
-    
-    # Now collect all results and find absolute minimums for each (impl, file, processes) combination
-    impl_file_proc_minimums = {}
-    
-    for data_folder, impl_data in all_data.items():
+        return []
+
+    # Collect all results and find absolute minimums for each configuration
+    config_minimums = {}
+    for data_folder, cpu_data in all_data.items():
         folder_name = os.path.basename(data_folder)
         
-        for impl_type, configs in impl_data.items():
-            if impl_type == 'SERIAL':
-                continue  # Skip serial for plotting
-            
-            for config_key, runs in configs.items():
-                if not runs:
-                    continue
-                
-                algo, file_name, num_processes = config_key
-                
-                # Find minimum time across all runs for this configuration
-                min_time = min(run['time'] for run in runs)
-                best_run = min(runs, key=lambda x: x['time'])
-                
-                # Key for grouping results by implementation, file and process count
-                group_key = (impl_type, file_name, num_processes)
-                
-                if group_key not in impl_file_proc_minimums or min_time < impl_file_proc_minimums[group_key]['Time']:
-                    speedup = global_baseline / min_time
-                    efficiency = speedup / num_processes
+        for cpu_config, strategy_data in cpu_data.items():
+            for strategy, impl_data in strategy_data.items():
+                for impl_type, configs in impl_data.items():
+                    if impl_type == 'SERIAL':
+                        continue  # Skip serial for plotting
                     
-                    impl_file_proc_minimums[group_key] = {
-                        'data_folder': folder_name,
-                        'implementation': impl_type,
-                        'algorithm': best_run['algorithm'],
-                        'file_name': file_name,
-                        'num_processes': num_processes,
-                        'Time': min_time,
-                        'Speedup': speedup,
-                        'Efficiency': efficiency,
-                        'baseline_time': global_baseline
-                    }
+                    for config_key, runs in configs.items():
+                        if not runs:
+                            continue
+                        
+                        algo, file_name, num_processes = config_key
+
+                        # Find minimum time across all runs for this configuration
+                        min_time = min(run['time'] for run in runs)
+                        best_run = min(runs, key=lambda x: x['time'])
+                        
+                        # Key for grouping results
+                        group_key = (impl_type, cpu_config, strategy, file_name, num_processes)
+                        
+                        if group_key not in config_minimums or min_time < config_minimums[group_key]['Time']:
+                            speedup = global_baseline / min_time
+                            efficiency = speedup / num_processes
+                            
+                            config_minimums[group_key] = {
+                                'data_folder': folder_name,
+                                'implementation': impl_type,
+                                'cpu_config': cpu_config,
+                                'strategy': strategy,
+                                'algorithm': best_run['algorithm'],
+                                'file_name': file_name,
+                                'num_processes': num_processes,
+                                'Time': min_time,
+                                'Speedup': speedup,
+                                'Efficiency': efficiency,
+                                'baseline_time': global_baseline
+                            }
     
-    return list(impl_file_proc_minimums.values())
+    return list(config_minimums.values())
 
-def _plot_dataframe(df: pd.DataFrame, log_dir: str = "logs"):
-    os.makedirs(os.path.join(log_dir, "plots"), exist_ok=True)
 
+def create_combined_plots(df: pd.DataFrame, plots_folder):
+    """Create the 6 combined comparison plots (all implementations together)."""
+    # Set up plotting style
     sns.set_style("whitegrid")
-
-    # Create a combined identifier for better visualization
-    df['impl_file'] = df['implementation'] + ' - ' + df['file_name']
-
-    # Plot: Time (separate lines for each implementation-file combination)
-    plt.figure(figsize=(16, 10))
-    sns.lineplot(
-        data=df,
-        x="num_processes",
-        y="Time",
-        hue="impl_file",
-        style="implementation",
-        markers=True,
-        dashes=False,
-        errorbar=None,
-    )
-    plt.title("Best Performance by Implementation and File (Minimum Times Across All Runs)")
-    plt.xlabel("Number of Processes")
-    plt.ylabel("Time (s)")
-    plt.legend(title="Implementation - File", bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, "plots", COMBINED_FILE), dpi=300, bbox_inches='tight')
-    plt.close()
-
-    # Plot: Speedup (separate lines for each implementation-file combination)
-    plt.figure(figsize=(16, 10))
-    sns.lineplot(
-        data=df,
-        x="num_processes",
-        y="Speedup",
-        hue="impl_file",
-        style="implementation",
-        markers=True,
-        dashes=False,
-        errorbar=None,
-    )
-    plt.title("Best Speedup by Implementation and File (Based on Minimum Times)")
-    plt.xlabel("Number of Processes")
-    plt.ylabel("Speedup")
-    plt.legend(title="Implementation - File", bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, "plots", SPEEDUP_FILE), dpi=300, bbox_inches='tight')
-    plt.close()
-
-    # Plot: Efficiency (separate lines for each implementation-file combination)
-    plt.figure(figsize=(16, 10))
-    sns.lineplot(
-        data=df,
-        x="num_processes",
-        y="Efficiency",
-        hue="impl_file",
-        style="implementation",
-        markers=True,
-        dashes=False,
-        errorbar=None,
-    )
-    plt.title("Best Efficiency by Implementation and File (Based on Minimum Times)")
-    plt.xlabel("Number of Processes")
-    plt.ylabel("Efficiency")
-    plt.legend(title="Implementation - File", bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(os.path.join(log_dir, "plots", EFF_FILE), dpi=300, bbox_inches='tight')
-    plt.close()
-
-    # Additional plots: Compare implementations directly for each file
-    for file_name in df['file_name'].unique():
-        file_data = df[df['file_name'] == file_name]
+    plt.rcParams['figure.dpi'] = 300
+    plt.rcParams['font.size'] = 12
+    
+    # Define colors for implementations
+    impl_colors = {
+        'MPI': '#1f77b4',    # Blue
+        'OMP': '#ff7f0e',    # Orange  
+        'HYBRID': '#2ca02c'  # Green
+    }
+    
+    # Define markers for CPU configurations
+    cpu_markers = {
+        '1_cpu': 'o',   # Circle
+        '2_cpu': 's',   # Square
+        '4_cpu': '^'    # Triangle
+    }
+    
+    # Filter data to only include the implementations and CPU configs we want
+    target_impls = ['MPI', 'OMP', 'HYBRID']
+    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    
+    filtered_df = df[
+        (df['implementation'].isin(target_impls)) & 
+        (df['cpu_config'].isin(target_cpus))
+    ]
+    
+    print(f"Filtered data: {len(filtered_df)} rows from {len(df)} total rows")
+    print(f"Implementations: {sorted(filtered_df['implementation'].unique())}")
+    print(f"CPU configs: {sorted(filtered_df['cpu_config'].unique())}")
+    print(f"Strategies: {sorted(filtered_df['strategy'].unique())}")
+    
+    # Create the 6 combined plots
+    strategies = ['pack', 'scatter']
+    metrics = [('Time', 'Time (s)', True), ('Speedup', 'Speedup', False), ('Efficiency', 'Efficiency', False)]
+    
+    for strategy in strategies:
+        strategy_data = filtered_df[filtered_df['strategy'] == strategy]
         
-        if len(file_data) == 0:
+        if len(strategy_data) == 0:
+            print(f"No data found for strategy: {strategy}")
             continue
             
-        # Time comparison for this file
-        plt.figure(figsize=(12, 8))
-        sns.lineplot(
-            data=file_data,
-            x="num_processes",
-            y="Time",
-            hue="implementation",
-            markers=True,
-            dashes=False,
-            errorbar=None,
-        )
-        plt.title(f"Performance Comparison for {file_name}")
-        plt.xlabel("Number of Processes")
-        plt.ylabel("Time (s)")
-        plt.legend(title="Implementation")
-        plt.tight_layout()
-        safe_filename = file_name.replace('/', '_').replace('\\', '_')
-        plt.savefig(os.path.join(log_dir, "plots", f"time_comparison_{safe_filename}.png"), 
-                   dpi=300, bbox_inches='tight')
-        plt.close()
+        print(f"\nCreating combined plots for {strategy.upper()} strategy...")
         
-        # Speedup comparison for this file
-        plt.figure(figsize=(12, 8))
-        sns.lineplot(
-            data=file_data,
-            x="num_processes",
-            y="Speedup",
-            hue="implementation",
-            markers=True,
-            dashes=False,
-            errorbar=None,
-        )
-        plt.title(f"Speedup Comparison for {file_name}")
-        plt.xlabel("Number of Processes")
-        plt.ylabel("Speedup")
-        plt.legend(title="Implementation")
-        plt.tight_layout()
-        plt.savefig(os.path.join(log_dir, "plots", f"speedup_comparison_{safe_filename}.png"), 
-                   dpi=300, bbox_inches='tight')
-        plt.close()
+        for metric, ylabel, use_log in metrics:
+            plt.figure(figsize=(14, 8))
+            
+            # Plot each implementation separately to control colors and markers
+            for impl in target_impls:
+                impl_data = strategy_data[strategy_data['implementation'] == impl]
+                
+                if len(impl_data) == 0:
+                    continue
+                
+                # Plot each CPU configuration with different markers
+                for cpu_config in target_cpus:
+                    cpu_data = impl_data[impl_data['cpu_config'] == cpu_config]
+                    
+                    if len(cpu_data) == 0:
+                        continue
+                    
+                    # Sort by number of processes for clean lines
+                    cpu_data = cpu_data.sort_values('num_processes')
+                    
+                    plt.plot(
+                        cpu_data['num_processes'], 
+                        cpu_data[metric],
+                        color=impl_colors[impl],
+                        marker=cpu_markers[cpu_config],
+                        markersize=8,
+                        linewidth=2,
+                        label=f"{impl} - {cpu_config}",
+                        linestyle='-' if impl == 'MPI' else '--' if impl == 'OMP' else '-.'
+                    )
+            
+            # Add reference lines
+            if metric == 'Speedup':
+                max_processes = strategy_data['num_processes'].max()
+                min_processes = strategy_data['num_processes'].min()
+                plt.plot([min_processes, max_processes], [min_processes, max_processes], 
+                        'k--', alpha=0.5, linewidth=1, label='Ideal Speedup')
+            
+            if metric == 'Efficiency':
+                plt.axhline(y=1.0, color='k', linestyle='--', alpha=0.5, linewidth=1, label='Perfect Efficiency')
+            
+            plt.title(f'{metric} Comparison - {strategy.upper()} Strategy\n(MPI, OMP, HYBRID - 1, 2, 4 CPU)', 
+                     fontsize=14, fontweight='bold')
+            plt.xlabel('Number of Processes', fontsize=12)
+            plt.ylabel(ylabel, fontsize=12)
+            
+            if use_log:
+                plt.yscale('log')
+            
+            plt.grid(True, alpha=0.3)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
+            
+            # Set x-axis to show all process counts
+            process_counts = sorted(strategy_data['num_processes'].unique())
+            plt.xticks(process_counts)
+            
+            plt.tight_layout()
+            
+            # Save the plot
+            filename = f"{metric.lower()}_{strategy}_comparison.png"
+            filepath = os.path.join(plots_folder, filename)
+            plt.savefig(filepath, bbox_inches='tight', dpi=300)
+            plt.close()
+            
+            print(f"  Saved: {filename}")
 
-    # Save detailed CSV with minimum times per implementation per file per process count
-    df_save = df.drop('impl_file', axis=1)  # Remove the combined column before saving
-    df_save.to_csv(os.path.join(log_dir, "plots", "minimum_times_by_implementation.csv"), index=False)
-    
-    # Create summary showing best implementation for each file/process combination
-    summary_data = []
-    for file_name in df['file_name'].unique():
-        for num_proc in sorted(df['num_processes'].unique()):
-            file_proc_data = df[(df['file_name'] == file_name) & (df['num_processes'] == num_proc)]
-            if len(file_proc_data) > 0:
-                best_row = file_proc_data.loc[file_proc_data['Time'].idxmin()]
-                summary_data.append({
-                    'file_name': file_name,
-                    'num_processes': num_proc,
-                    'best_implementation': best_row['implementation'],
-                    'best_time': best_row['Time'],
-                    'speedup': best_row['Speedup'],
-                    'efficiency': best_row['Efficiency'],
-                    'data_folder': best_row['data_folder']
-                })
-    
-    summary_df = pd.DataFrame(summary_data)
-    summary_df.to_csv(os.path.join(log_dir, "plots", "best_implementation_summary.csv"), index=False)
-    
-    print(f"Results by implementation saved to: {os.path.join(log_dir, 'plots', 'minimum_times_by_implementation.csv')}")
-    print(f"Best implementation summary saved to: {os.path.join(log_dir, 'plots', 'best_implementation_summary.csv')}")
-    
-    # Print summary
-    print(f"\nSummary by implementation:")
-    for impl in sorted(df['implementation'].unique()):
-        impl_data = df[df['implementation'] == impl]
-        print(f"\n{impl}:")
-        for file_name in sorted(impl_data['file_name'].unique()):
-            file_data = impl_data[impl_data['file_name'] == file_name].sort_values('num_processes')
-            print(f"  {file_name}:")
-            for _, row in file_data.iterrows():
-                print(f"    {row['num_processes']} processes: {row['Time']:.3f}s "
-                      f"({row['Speedup']:.2f}x speedup, {row['Efficiency']:.2f} efficiency)")
 
-def plot_from_multiple_folders(base_dir, specific_folders=None):
-    """Main function to process multiple data folders and create plots."""
+def create_separated_plots(df: pd.DataFrame, plots_folder):
+    """Create separate plots for each implementation (MPI, OMP, HYBRID)."""
+    # Set up plotting style
+    sns.set_style("whitegrid")
+    plt.rcParams['figure.dpi'] = 300
+    plt.rcParams['font.size'] = 12
+    
+    # Define colors for CPU configurations (different from implementation colors)
+    cpu_colors = {
+        '1_cpu': '#e74c3c',   # Red
+        '2_cpu': '#3498db',   # Blue
+        '4_cpu': '#2ecc71'    # Green
+    }
+    
+    # Define markers for strategies
+    strategy_markers = {
+        'pack': 'o',      # Circle
+        'scatter': 's'    # Square
+    }
+    
+    # Filter data
+    target_impls = ['MPI', 'OMP', 'HYBRID']
+    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    
+    filtered_df = df[
+        (df['implementation'].isin(target_impls)) & 
+        (df['cpu_config'].isin(target_cpus))
+    ]
+    
+    print(f"\nCreating separated plots for each implementation...")
+    
+    strategies = ['pack', 'scatter']
+    metrics = [('Time', 'Time (s)', True), ('Speedup', 'Speedup', False), ('Efficiency', 'Efficiency', False)]
+    
+    # Create plots for each implementation separately
+    for impl in target_impls:
+        impl_data = filtered_df[filtered_df['implementation'] == impl]
+        
+        if len(impl_data) == 0:
+            print(f"No data found for implementation: {impl}")
+            continue
+        
+        print(f"\nCreating plots for {impl} implementation...")
+        
+        for metric, ylabel, use_log in metrics:
+            plt.figure(figsize=(14, 8))
+            
+            # Plot each strategy and CPU configuration
+            for strategy in strategies:
+                strategy_data = impl_data[impl_data['strategy'] == strategy]
+                
+                if len(strategy_data) == 0:
+                    continue
+                
+                for cpu_config in target_cpus:
+                    cpu_data = strategy_data[strategy_data['cpu_config'] == cpu_config]
+                    
+                    if len(cpu_data) == 0:
+                        continue
+                    
+                    # Sort by number of processes for clean lines
+                    cpu_data = cpu_data.sort_values('num_processes')
+                    
+                    plt.plot(
+                        cpu_data['num_processes'], 
+                        cpu_data[metric],
+                        color=cpu_colors[cpu_config],
+                        marker=strategy_markers[strategy],
+                        markersize=8,
+                        linewidth=2,
+                        label=f"{cpu_config} - {strategy}",
+                        linestyle='-' if strategy == 'pack' else '--'
+                    )
+            
+            # Add reference lines
+            if metric == 'Speedup':
+                max_processes = impl_data['num_processes'].max()
+                min_processes = impl_data['num_processes'].min()
+                plt.plot([min_processes, max_processes], [min_processes, max_processes], 
+                        'k--', alpha=0.5, linewidth=1, label='Ideal Speedup')
+            
+            if metric == 'Efficiency':
+                plt.axhline(y=1.0, color='k', linestyle='--', alpha=0.5, linewidth=1, label='Perfect Efficiency')
+            
+            plt.title(f'{metric} Analysis - {impl} Implementation\n(Pack vs Scatter - 1, 2, 4 CPU)', 
+                     fontsize=14, fontweight='bold')
+            plt.xlabel('Number of Processes', fontsize=12)
+            plt.ylabel(ylabel, fontsize=12)
+            
+            if use_log:
+                plt.yscale('log')
+            
+            plt.grid(True, alpha=0.3)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
+            
+            # Set x-axis to show all process counts
+            process_counts = sorted(impl_data['num_processes'].unique())
+            plt.xticks(process_counts)
+            
+            plt.tight_layout()
+            
+            # Save the plot
+            filename = f"{metric.lower()}_{impl.lower()}_separated.png"
+            filepath = os.path.join(plots_folder, filename)
+            plt.savefig(filepath, bbox_inches='tight', dpi=300)
+            plt.close()
+            
+            print(f"  Saved: {filename}")
+
+
+def create_focused_plots(df: pd.DataFrame, graph_name, log_dir: str = "logs"):
+    """Create both combined and separated plots."""
+    plots_folder = os.path.join(log_dir, "plots_" + graph_name)
+    os.makedirs(plots_folder, exist_ok=True)
+    
+    # Create combined plots (original functionality)
+    create_combined_plots(df, plots_folder)
+    
+    # Create separated plots (new functionality)
+    create_separated_plots(df, plots_folder)
+    
+    # Create summary tables for each strategy
+    strategies = ['pack', 'scatter']
+    target_impls = ['MPI', 'OMP', 'HYBRID']
+    target_cpus = ['1_cpu', '2_cpu', '4_cpu']
+    
+    filtered_df = df[
+        (df['implementation'].isin(target_impls)) & 
+        (df['cpu_config'].isin(target_cpus))
+    ]
+    
+    for strategy in strategies:
+        strategy_data = filtered_df[filtered_df['strategy'] == strategy]
+        
+        if len(strategy_data) == 0:
+            continue
+        
+        # Create summary table
+        summary_table = strategy_data.pivot_table(
+            index=['implementation', 'cpu_config'],
+            columns='num_processes',
+            values=['Time', 'Speedup', 'Efficiency'],
+            aggfunc='first'
+        ).round(3)
+        
+        # Save summary table
+        summary_filename = f"summary_{strategy}_strategy.csv"
+        summary_filepath = os.path.join(log_dir, "plots", summary_filename)
+        summary_table.to_csv(summary_filepath)
+        print(f"Saved summary table: {summary_filename}")
+    
+    # Print analysis summary
+    print(f"\n" + "="*60)
+    print(f"ENHANCED ANALYSIS SUMMARY")
+    print(f"="*60)
+    
+    for strategy in strategies:
+        strategy_data = filtered_df[filtered_df['strategy'] == strategy]
+        
+        if len(strategy_data) == 0:
+            continue
+            
+        print(f"\n{strategy.upper()} Strategy Results:")
+        print(f"-" * 30)
+        
+        # Best performance for each implementation
+        for impl in target_impls:
+            impl_data = strategy_data[strategy_data['implementation'] == impl]
+            
+            if len(impl_data) == 0:
+                print(f"  {impl}: No data available")
+                continue
+            
+            best_time = impl_data.loc[impl_data['Time'].idxmin()]
+            best_speedup = impl_data.loc[impl_data['Speedup'].idxmax()]
+            
+            print(f"  {impl}:")
+            print(f"    Best Time: {best_time['Time']:.3f}s ({best_time['cpu_config']}, {best_time['num_processes']} proc)")
+            print(f"    Best Speedup: {best_speedup['Speedup']:.2f}x ({best_speedup['cpu_config']}, {best_speedup['num_processes']} proc)")
+            print(f"    Best Efficiency: {best_speedup['Efficiency']:.3f}")
+    
+    print(f"\nGenerated plots:")
+    print(f"  Combined comparison plots (6 total):")
+    print(f"    - time_pack_comparison.png")
+    print(f"    - speedup_pack_comparison.png") 
+    print(f"    - efficiency_pack_comparison.png")
+    print(f"    - time_scatter_comparison.png")
+    print(f"    - speedup_scatter_comparison.png")
+    print(f"    - efficiency_scatter_comparison.png")
+    print(f"  Separated implementation plots (9 total):")
+    print(f"    - time_mpi_separated.png")
+    print(f"    - speedup_mpi_separated.png")
+    print(f"    - efficiency_mpi_separated.png")
+    print(f"    - time_omp_separated.png")
+    print(f"    - speedup_omp_separated.png")
+    print(f"    - efficiency_omp_separated.png")
+    print(f"    - time_hybrid_separated.png")
+    print(f"    - speedup_hybrid_separated.png")
+    print(f"    - efficiency_hybrid_separated.png")
+    print(f"\nAll plots saved to: {os.path.join(log_dir, 'plots')}")
+
+
+def plot_focused_analysis(base_dir, specific_folders=None):
+    """Main function to create the focused plots."""
     all_data = collect_all_data(base_dir, specific_folders)
     if not all_data:
         print("No data collected from folders.")
         return
-    
-    min_data = get_minimum_times_by_implementation(base_dir, all_data)
+
+    graph_name = next(iter(k[1] for d1 in all_data.values()
+                            for d2 in d1.values()
+                            for d3 in d2.values()
+                            for d4 in d3.values()
+                            for k in d4.keys())).split('/')[1].split('.')[0]
+
+    min_data = get_minimum_times_by_configuration(base_dir, all_data, graph_name)
     if not min_data:
         print("No minimum data calculated.")
         return
@@ -376,59 +607,12 @@ def plot_from_multiple_folders(base_dir, specific_folders=None):
     df = pd.DataFrame(min_data)
     print(f"Created dataframe with {len(df)} rows")
     print(f"Data folders: {df['data_folder'].unique()}")
+    print(f"CPU configurations: {df['cpu_config'].unique()}")
+    print(f"Strategies: {df['strategy'].unique()}")
     print(f"Implementations: {df['implementation'].unique()}")
     print(f"Files: {df['file_name'].unique()}")
     
-    _plot_dataframe(df, base_dir)
-
-def plot_from_output_files(log_dir):
-    """Single folder processing."""
-    serial_file = os.path.join(log_dir, "serial_parallel_mst.o1")
-    T1 = read_base_time(serial_file)
-
-    if T1 is None:
-        print("Cannot calculate speedup/efficiency: base time not available.")
-        return
-
-    patterns = [
-        ("MPI", os.path.join(log_dir, "mpi_parallel_mst.o*")),
-        ("OMP", os.path.join(log_dir, "omp_parallel_mst.o*")),
-    ]
-    rows = []
-
-    for impl_type, pattern in patterns:
-        files = glob.glob(pattern)
-
-        for file in files:
-            print(f"Processing file: {file}")
-            with open(file, "r") as f:
-                line = f.readline().strip()
-                if line:
-                    parts = line.split()
-                    if len(parts) == 4:
-                        algo, file_name, num_processes, time = parts
-                        time = float(time)
-                        num_processes = int(num_processes)
-                        speedup = T1 / time
-                        efficiency = speedup / num_processes
-                        rows.append(
-                            {
-                                "implementation": impl_type,
-                                "algorithm": algo,
-                                "file_name": file_name,
-                                "num_processes": num_processes,
-                                "Time": time,
-                                "Speedup": speedup,
-                                "Efficiency": efficiency,
-                            }
-                        )
-
-    if not rows:
-        print("No valid data found in output files.")
-        return
-
-    df = pd.DataFrame(rows)
-    _plot_dataframe(df, log_dir)
+    create_focused_plots(df, graph_name, base_dir)
 
 
 def parse_folder_arguments(args):
@@ -461,44 +645,41 @@ def parse_folder_arguments(args):
     
     return base_dir, folders if folders else None
 
+
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
-        print("Usage: python3 plot_results.py [options] [folder1] [folder2] ...")
+        print("MST Performance Plotter")
+        print("===============================")
+        print("Creates 15 total plots:")
+        print("  COMBINED PLOTS (6 total):")
+        print("    - Time, Speedup, Efficiency for Pack strategy")
+        print("    - Time, Speedup, Efficiency for Scatter strategy")
+        print("    - Each plot shows MPI, OMP, HYBRID implementations together")
+        print("    - Each plot shows 1, 2, 4 CPU configurations")
+        print("  SEPARATED PLOTS (9 total):")
+        print("    - Time, Speedup, Efficiency for each implementation (MPI, OMP, HYBRID)")
+        print("    - Each plot shows Pack vs Scatter strategies")
+        print("    - Each plot shows 1, 2, 4 CPU configurations")
+        print("")
+        print("Usage: python3 enhanced_plotter.py [options] [folder1] [folder2] ...")
         print("Options:")
         print("  --dir <path>               Specify base directory (default: logs)")
         print("  --folders <f1> <f2> ...    Specify specific date@time folders")
-        print("  --multi                    Process multiple date@time folders")
         print("")
         print("Examples:")
-        print("  python3 plot_results.py 26_05_2025@01_14 27_05_2025@10_30")
-        print("  python3 plot_results.py --dir /path/to/logs --folders 26_05_2025@01_14")
-        print("  python3 plot_results.py --multi --dir logs")
+        print("  python3 enhanced_plotter.py 26_05_2025@01_14 27_05_2025@10_30")
+        print("  python3 enhanced_plotter.py --dir /path/to/logs --folders 26_05_2025@01_14")
+        print("  python3 enhanced_plotter.py --dir logs")
         sys.exit(1)
 
     base_dir, specific_folders = parse_folder_arguments(sys.argv[1:])
 
-    if specific_folders or "--multi" in sys.argv:
-        print(f"Base directory: {base_dir}")
-        if specific_folders:
-            print(f"Processing specific folders: {specific_folders}")
-        else:
-            print("Processing all available date@time folders")
-        plot_from_multiple_folders(base_dir, specific_folders)
+    print(f"Enhanced MST Performance Analysis")
+    print(f"Base directory: {base_dir}")
+    if specific_folders:
+        print(f"Processing specific folders: {specific_folders}")
     else:
-        # Check if the directory has date@time structure
-        data_folders = []
-        try:
-            for item in os.listdir(base_dir):
-                if os.path.isdir(os.path.join(base_dir, item)) and '@' in item:
-                    data_folders.append(item)
-        except FileNotFoundError:
-            pass
-        
-        if data_folders:
-            print(f"Detected date@time folder structure, using multi-folder processing")
-            plot_from_multiple_folders(base_dir)
-        else:
-            print(f"Using single folder processing")
-            plot_from_output_files(base_dir)
-
-    print(f"Processing complete. Check the plots folder for results.")
+        print("Processing all available date@time folders")
+    
+    plot_focused_analysis(base_dir, specific_folders)
+    print(f"Enhanced analysis complete!")

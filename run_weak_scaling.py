@@ -22,7 +22,6 @@ def run_hybrid(n_cores, input_file, cpus, place, log_folder):
     print(f"Running HYBRID with {n_cores}_{place}")
 
 def run_script(mode, input_files):
-    log_folder="weak_scalability"
 
     for input_file in input_files:
         path = "./dataset/"+input_file
@@ -34,6 +33,7 @@ def run_script(mode, input_files):
         
         max_cores = 8
         n_cores = 1
+        log_folder="weak_scalability"+os.path.splitext(os.path.basename(input_file))[0]
         
         while n_cores <= max_cores:
             if mode == "mpi" or mode == "all":

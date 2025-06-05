@@ -48,6 +48,8 @@ def run_script(mode, input_files):
                 run_hybrid(n_cores, input_file, 1, "pack", log_folder)
                 sleep(20)
 
+            n_cores*=2
+
     print("---- AUTO RUN SCRIPT TERMINATED ----")
 
 if __name__ == "__main__":

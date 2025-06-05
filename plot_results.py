@@ -277,7 +277,7 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
     # Set up plotting style
     sns.set_style("whitegrid")
     plt.rcParams['figure.dpi'] = 300
-    plt.rcParams['font.size'] = 12
+    plt.rcParams['font.size'] = 18
     
     # Define colors for implementations
     impl_colors = {
@@ -351,12 +351,12 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
                         linestyle='-' if impl == 'MPI' else '--' if impl == 'OMP' else '-.'
                     )            
             plt.title(f'{metric} Comparison - {strategy.upper()} Strategy\n(MPI, OMP, HYBRID - 1, 2, 4 NODEs)', 
-                     fontsize=14, fontweight='bold')
-            plt.xlabel('Number of Processes', fontsize=12)
-            plt.ylabel(ylabel, fontsize=12)
+                     fontsize=22, fontweight='bold')
+            plt.xlabel('Number of Processes', fontsize=20)
+            plt.ylabel(ylabel, fontsize=20)
             
             plt.grid(True, alpha=0.3)
-            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=20)
             
             # Set x-axis to show all process counts
             process_counts = sorted(strategy_data['num_processes'].unique())
@@ -378,7 +378,7 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
     # Set up plotting style
     sns.set_style("whitegrid")
     plt.rcParams['figure.dpi'] = 300
-    plt.rcParams['font.size'] = 12
+    plt.rcParams['font.size'] = 18
     
     # Define colors for NODEs configurations (different from implementation colors)
     cpu_colors = {
@@ -448,9 +448,9 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
                     )   
                              
             plt.title(f'{metric} Analysis - {impl} Implementation\n(Pack vs Scatter - 1, 2, 4 NODEs)', 
-                     fontsize=14, fontweight='bold')
-            plt.xlabel('Number of Processes', fontsize=12)
-            plt.ylabel(ylabel, fontsize=12)
+                     fontsize=22, fontweight='bold')
+            plt.xlabel('Number of Processes', fontsize=20)
+            plt.ylabel(ylabel, fontsize=20)
             
             plt.grid(True, alpha=0.3)
             plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
@@ -507,7 +507,7 @@ def create_focused_plots(df: pd.DataFrame, graph_name, log_dir: str = "logs"):
         
         # Save summary table
         summary_filename = f"summary_{strategy}_strategy.csv"
-        summary_filepath = os.path.join(log_dir, "plots", summary_filename)
+        summary_filepath = os.path.join(plots_folder, summary_filename)
         summary_table.to_csv(summary_filepath)
         print(f"Saved summary table: {summary_filename}")
     

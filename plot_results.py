@@ -6,6 +6,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from math import trunc
 
 def read_base_time(serial_file):
     """Read the baseline serial time from serial file."""
@@ -265,7 +266,7 @@ def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
                                 'num_processes': num_processes,
                                 'Time': min_time,
                                 'Speedup': speedup,
-                                'Efficiency': efficiency,
+                                'Efficiency': trunc(efficiency * 10) / 10.0,
                                 'baseline_time': global_baseline
                             }
     

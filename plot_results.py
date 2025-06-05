@@ -164,10 +164,12 @@ def collect_all_data(base_dir, specific_folders=None):
                     all_files = []
                     for pattern in implementation_patterns:
                         files = glob.glob(os.path.join(run_folder, pattern))
-                        all_files.extend(files)
+                        # Filter out .o1 files
+                        filtered_files = [f for f in files if not f.endswith('.o1')]
+                        all_files.extend(filtered_files)
                     
                     if all_files:
-                        print(f"      {run_folder_name}: found {len(all_files)} files")
+                        print(f"      {run_folder_name}: found {len(all_files)} files (excluding .o1)")
                     
                     for file_path in all_files:
                         impl_type, file_processes, file_strategy = extract_impl_and_processes_from_filename(file_path)
@@ -211,8 +213,9 @@ def get_global_baseline(base_dir, graph_name):
     serial_file = os.path.join(base_dir, f"serial_{graph_name}.o1")
     global_baseline = read_base_time(serial_file)
     
-    print(f"Found global baseline time: {global_baseline:.3f}s at '{serial_file}'")
-
+    if global_baseline:
+        print(f"Found global baseline time: {global_baseline:.3f}s at '{serial_file}'")
+    
     return global_baseline
 
 def get_minimum_times_by_configuration(base_dir, all_data, graph_name):
@@ -290,6 +293,13 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
         '4_cpu': '^'    # Triangle
     }
     
+    # Define mapping from CPU config to node labels
+    cpu_to_node_label = {
+        '1_cpu': '1 node',
+        '2_cpu': '2 nodes', 
+        '4_cpu': '3 nodes'
+    }
+    
     # Filter data to only include the implementations and CPU configs we want
     target_impls = ['MPI', 'OMP', 'HYBRID']
     target_cpus = ['1_cpu', '2_cpu', '4_cpu']
@@ -306,7 +316,7 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
     
     # Create the 6 combined plots
     strategies = ['pack', 'scatter']
-    metrics = [('Time', 'Time (s)', True), ('Speedup', 'Speedup', False), ('Efficiency', 'Efficiency', False)]
+    metrics = [('Time', 'Time (s)'), ('Speedup', 'Speedup'), ('Efficiency', 'Efficiency')]
     
     for strategy in strategies:
         strategy_data = filtered_df[filtered_df['strategy'] == strategy]
@@ -317,7 +327,7 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
             
         print(f"\nCreating combined plots for {strategy.upper()} strategy...")
         
-        for metric, ylabel, use_log in metrics:
+        for metric, ylabel in metrics:
             plt.figure(figsize=(14, 8))
             
             # Plot each implementation separately to control colors and markers
@@ -346,25 +356,11 @@ def create_combined_plots(df: pd.DataFrame, plots_folder):
                         linewidth=2,
                         label=f"{impl} - {cpu_config}",
                         linestyle='-' if impl == 'MPI' else '--' if impl == 'OMP' else '-.'
-                    )
-            
-            # Add reference lines
-            if metric == 'Speedup':
-                max_processes = strategy_data['num_processes'].max()
-                min_processes = strategy_data['num_processes'].min()
-                plt.plot([min_processes, max_processes], [min_processes, max_processes], 
-                        'k--', alpha=0.5, linewidth=1, label='Ideal Speedup')
-            
-            if metric == 'Efficiency':
-                plt.axhline(y=1.0, color='k', linestyle='--', alpha=0.5, linewidth=1, label='Perfect Efficiency')
-            
+                    )            
             plt.title(f'{metric} Comparison - {strategy.upper()} Strategy\n(MPI, OMP, HYBRID - 1, 2, 4 CPU)', 
                      fontsize=14, fontweight='bold')
             plt.xlabel('Number of Processes', fontsize=12)
             plt.ylabel(ylabel, fontsize=12)
-            
-            if use_log:
-                plt.yscale('log')
             
             plt.grid(True, alpha=0.3)
             plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
@@ -416,7 +412,7 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
     print(f"\nCreating separated plots for each implementation...")
     
     strategies = ['pack', 'scatter']
-    metrics = [('Time', 'Time (s)', True), ('Speedup', 'Speedup', False), ('Efficiency', 'Efficiency', False)]
+    metrics = [('Time', 'Time (s)'), ('Speedup', 'Speedup'), ('Efficiency', 'Efficiency')]
     
     # Create plots for each implementation separately
     for impl in target_impls:
@@ -428,7 +424,7 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
         
         print(f"\nCreating plots for {impl} implementation...")
         
-        for metric, ylabel, use_log in metrics:
+        for metric, ylabel in metrics:
             plt.figure(figsize=(14, 8))
             
             # Plot each strategy and CPU configuration
@@ -456,25 +452,12 @@ def create_separated_plots(df: pd.DataFrame, plots_folder):
                         linewidth=2,
                         label=f"{cpu_config} - {strategy}",
                         linestyle='-' if strategy == 'pack' else '--'
-                    )
-            
-            # Add reference lines
-            if metric == 'Speedup':
-                max_processes = impl_data['num_processes'].max()
-                min_processes = impl_data['num_processes'].min()
-                plt.plot([min_processes, max_processes], [min_processes, max_processes], 
-                        'k--', alpha=0.5, linewidth=1, label='Ideal Speedup')
-            
-            if metric == 'Efficiency':
-                plt.axhline(y=1.0, color='k', linestyle='--', alpha=0.5, linewidth=1, label='Perfect Efficiency')
-            
+                    )   
+                             
             plt.title(f'{metric} Analysis - {impl} Implementation\n(Pack vs Scatter - 1, 2, 4 CPU)', 
                      fontsize=14, fontweight='bold')
             plt.xlabel('Number of Processes', fontsize=12)
             plt.ylabel(ylabel, fontsize=12)
-            
-            if use_log:
-                plt.yscale('log')
             
             plt.grid(True, alpha=0.3)
             plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)

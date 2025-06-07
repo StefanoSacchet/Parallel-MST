@@ -7,11 +7,6 @@
 #include "logger.h"
 #include "tools/graph_parser.h"
 
-// Compare edges by weight for sorting
-static int compare_edges(const void *a, const void *b) {
-  return ((Edge_t *)a)->weight - ((Edge_t *)b)->weight;
-}
-
 void omp_mst(Graph_t *graph, Graph_t *mst) {
   graph_size_t n_edges = graph->E;
   graph_size_t n_vertices = graph->V;

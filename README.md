@@ -54,6 +54,8 @@ To run on HPC there are several shell scripts in the `root` directory. Additiona
 ## Logging and Analytics
 Logs from HPC runs are stored as .o and .e files. The Python script [`plot_results.py`](plot_results.py) parses them to compute average times, speedups, and efficiency.
 
+Weak scalability uses different test cases, and expects different results, thereofore, the script [`plot_results_weak.py`](plot_results_weak.py) is provided for that purpose.
+
 ## Dataset
 
 The [dataset](dataset) directory contains sample input graphs. The `graph_generator` executable can be used to create custom graphs.
